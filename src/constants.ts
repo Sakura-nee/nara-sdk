@@ -1,7 +1,5 @@
 /**
- * SDK and CLI default constants
- *
- * Priority for all values: CLI flag > env variable > default value
+ * SDK default constants
  */
 
 /**
@@ -9,12 +7,6 @@
  */
 export const DEFAULT_RPC_URL =
   process.env.RPC_URL || "https://mainnet-api.nara.build/";
-
-/**
- * Default wallet path
- */
-export const DEFAULT_WALLET_PATH =
-  process.env.WALLET_PATH || "~/.config/nara/id.json";
 
 /**
  * Default quest relay URL

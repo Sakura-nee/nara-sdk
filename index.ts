@@ -1,5 +1,5 @@
 /**
- * Nara CLI & SDK - CLI and SDK for the Nara chain (Solana-compatible)
+ * Nara SDK - SDK for the Nara chain (Solana-compatible)
  *
  * This SDK provides functions to interact with the Nara chain.
  */

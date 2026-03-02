@@ -10,7 +10,7 @@ import {
 } from "@solana/web3.js";
 import * as anchor from "@coral-xyz/anchor";
 import { Program, AnchorProvider, Wallet } from "@coral-xyz/anchor";
-import type { NaraQuest } from "./cli/quest/nara_quest_types";
+import type { NaraQuest } from "./quest/nara_quest_types";
 import { DEFAULT_QUEST_PROGRAM_ID } from "./constants";
 
 import { createRequire } from "module";
@@ -26,13 +26,8 @@ import { existsSync } from "fs";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 function findZkFile(name: string): string {
-  // 1. src/cli/zk/ (dev mode, running from src/)
-  const srcPath = join(__dirname, "cli/zk", name);
+  const srcPath = join(__dirname, "zk", name);
   if (existsSync(srcPath)) return srcPath;
-  // 2. dist/zk/ (published, running from dist/)
-  const distPath = join(__dirname, "zk", name);
-  if (existsSync(distPath)) return distPath;
-  // 3. Fallback to src path (will error at runtime if missing)
   return srcPath;
 }
 
@@ -167,10 +162,7 @@ function createProgram(
   wallet: Keypair,
   programId?: string
 ): Program<NaraQuest> {
-  const idlPath = existsSync(join(__dirname, "cli/quest/nara_quest.json"))
-    ? "./cli/quest/nara_quest.json"
-    : "./quest/nara_quest.json";
-  const idl = _require(idlPath);
+  const idl = _require("./quest/nara_quest.json");
   const pid = programId ?? DEFAULT_QUEST_PROGRAM_ID;
   const idlWithPid = { ...idl, address: pid };
   const provider = new AnchorProvider(

@@ -11,7 +11,7 @@
  * Prerequisites:
  * - Set PRIVATE_KEY environment variable (base58 or JSON array)
  *
- * Run: npx tsx examples/8-quest.ts
+ * Run: tsx examples/8-quest.ts
  */
 
 import {
