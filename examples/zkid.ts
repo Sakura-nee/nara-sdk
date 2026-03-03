@@ -67,14 +67,14 @@ async function main() {
     console.log("ZK ID info:", info);
   }
 
-  // 4. Deposit 1 SOL into the ZK ID
+  // 4. Deposit 1 NARA into the ZK ID
   //    Anyone who knows the name can do this — no proof needed
-  console.log("\n4. Depositing 1 SOL into ZK ID:", name);
+  console.log("\n4. Depositing 1 NARA into ZK ID:", name);
   const depositSig = await deposit(
     connection,
     wallet,
     name,
-    ZKID_DENOMINATIONS.SOL_1
+    ZKID_DENOMINATIONS.NARA_1
   );
   console.log("Deposited! Signature:", depositSig);
 
@@ -83,8 +83,8 @@ async function main() {
   const claimable = await scanClaimableDeposits(connection, name, idSecret);
   console.log(`Found ${claimable.length} claimable deposit(s):`);
   claimable.forEach((d, i) => {
-    const sol = Number(d.denomination) / 1e9;
-    console.log(`  [${i}] leafIndex=${d.leafIndex}, depositIndex=${d.depositIndex}, amount=${sol} SOL`);
+    const nara = Number(d.denomination) / 1e9;
+    console.log(`  [${i}] leafIndex=${d.leafIndex}, depositIndex=${d.depositIndex}, amount=${nara} NARA`);
   });
 
   if (claimable.length === 0) {
@@ -107,7 +107,7 @@ async function main() {
     recipient.publicKey
   );
   console.log("Withdrawn! Signature:", withdrawSig);
-  console.log("SOL sent to:", recipient.publicKey.toBase58());
+  console.log("NARA sent to:", recipient.publicKey.toBase58());
 
   // 7. (Optional) Transfer ZK ID ownership to a new identity
   //    The new owner derives their idSecret from their own wallet + same name

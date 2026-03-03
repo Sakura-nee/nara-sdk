@@ -2,7 +2,7 @@
  * zkid module - interact with nara-zk anonymous identity protocol
  *
  * A ZK ID is a named account where:
- * - Anyone can deposit SOL knowing only the name
+ * - Anyone can deposit NARA knowing only the name
  * - Only the owner (who knows the idSecret) can withdraw anonymously
  * - Ownership can be transferred via ZK proof without revealing the owner's wallet
  */
@@ -38,10 +38,12 @@ const OWNERSHIP_ZKEY = join(__dirname, "zk", "ownership_final.zkey");
 
 /** Fixed denomination pools (in lamports). */
 export const ZKID_DENOMINATIONS = {
-  SOL_1: new BN("1000000000"),
-  SOL_10: new BN("10000000000"),
-  SOL_100: new BN("100000000000"),
-  SOL_1000: new BN("1000000000000"),
+  NARA_1: new BN("1000000000"),
+  NARA_10: new BN("10000000000"),
+  NARA_100: new BN("100000000000"),
+  NARA_1000: new BN("1000000000000"),
+  NARA_10000: new BN("10000000000000"),
+  NARA_100000: new BN("100000000000000"),
 };
 
 export interface ZkIdInfo {
@@ -325,7 +327,7 @@ export async function createZkId(
 }
 
 /**
- * Deposit SOL into a named ZK ID.
+ * Deposit NARA into a named ZK ID.
  * Anyone knowing the name can deposit — no proof required.
  *
  * @param denomination - Must be one of ZKID_DENOMINATIONS (fixed pool amounts)
