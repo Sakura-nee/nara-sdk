@@ -25,3 +25,9 @@ export const DEFAULT_QUEST_PROGRAM_ID =
  */
 export const DEFAULT_SKILLS_PROGRAM_ID =
   process.env.SKILLS_PROGRAM_ID || "54CFypri3UxCawUCLNvFebvpE1qWssKmVfk7RoKzLTkU";
+
+/**
+ * ZK ID program ID
+ */
+export const DEFAULT_ZKID_PROGRAM_ID =
+  process.env.ZKID_PROGRAM_ID || "Dp4Jb4fmfK1HHVzjMAnWumE5iLuzDsfc4VdRVL7XmY82";

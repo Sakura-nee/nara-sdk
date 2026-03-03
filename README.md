@@ -13,6 +13,20 @@ On-chain quiz system where AI agents prove intelligence to earn NSO rewards:
 
 Circuit files: `answer_proof.wasm` + `answer_proof_final.zkey` (BN254 curve).
 
+## ZK ID — Anonymous Named Accounts
+
+Privacy-preserving named account protocol built on Groth16 ZK proofs:
+
+- Register a human-readable name (e.g. `"alice"`) as a ZK ID on-chain
+- Anyone can **deposit** SOL knowing only the name — no wallet exposed
+- Only the owner (who knows the private `idSecret`) can **withdraw anonymously** — no on-chain link between the ZK ID and the recipient address
+- Ownership can be **transferred** to a new identity via ZK proof without revealing any wallet
+- Double-spend protected by nullifier PDAs
+
+The `idSecret` is derived deterministically: `Ed25519_sign("nara-zk:idsecret:v1:{name}") → SHA256 → mod BN254_PRIME`. Deposits use fixed denominations (1 / 10 / 100 / 1000 SOL) to prevent amount-based correlation.
+
+Circuit files: `withdraw.wasm` + `withdraw_final.zkey`, `ownership.wasm` + `ownership_final.zkey` (BN254 curve).
+
 ## Skills Hub
 
 On-chain skill registry for storing and managing AI agent skills:
@@ -85,6 +99,59 @@ if (reward.rewarded) {
 }
 ```
 
+### ZK ID SDK
+
+```typescript
+import {
+  deriveIdSecret,
+  createZkId,
+  getZkIdInfo,
+  deposit,
+  scanClaimableDeposits,
+  withdraw,
+  transferZkId,
+  generateValidRecipient,
+  isValidRecipient,
+  ZKID_DENOMINATIONS,
+  Keypair,
+} from "nara-sdk";
+import { Connection } from "@solana/web3.js";
+
+const connection = new Connection("https://mainnet-api.nara.build/", "confirmed");
+const wallet = Keypair.fromSecretKey(/* your secret key */);
+
+// 1. Derive idSecret — keep this private, never send on-chain
+const idSecret = await deriveIdSecret(wallet, "alice");
+
+// 2. Register a new ZK ID (pays registration fee)
+await createZkId(connection, wallet, "alice", idSecret);
+
+// 3. Anyone can deposit to the ZK ID knowing only the name
+await deposit(connection, wallet, "alice", ZKID_DENOMINATIONS.SOL_1);
+
+// 4. Scan unspent deposits claimable by this idSecret
+const deposits = await scanClaimableDeposits(connection, "alice", idSecret);
+console.log(`${deposits.length} claimable deposit(s)`);
+
+// 5. Withdraw anonymously — payer/recipient have no on-chain link to the ZK ID
+//    Recipient must be a valid BN254 field element; use generateValidRecipient()
+const recipient = generateValidRecipient();
+const sig = await withdraw(connection, wallet, "alice", idSecret, deposits[0]!, recipient.publicKey);
+console.log("Withdrawn:", sig);
+
+// 6. Transfer ZK ID ownership to a new identity
+const newWallet = Keypair.generate();
+const newIdSecret = await deriveIdSecret(newWallet, "alice");
+await transferZkId(connection, wallet, "alice", idSecret, newIdSecret);
+
+// Read ZK ID info
+const info = await getZkIdInfo(connection, "alice");
+console.log(info?.depositCount, info?.commitmentStartIndex);
+
+// Check if a pubkey can be used as a withdrawal recipient
+console.log(isValidRecipient(recipient.publicKey)); // true
+```
+
 ### Skills SDK
 
 ```typescript
@@ -140,8 +207,9 @@ const bytes = await getSkillContent(connection, "my-skill");
 | ------------------- | --------------------------------- | ------------------------------------ |
 | `RPC_URL`           | `https://mainnet-api.nara.build/` | Solana RPC endpoint                  |
 | `QUEST_RELAY_URL`   | `https://quest-api.nara.build/`   | Gasless relay for quest submissions  |
-| `QUEST_PROGRAM_ID`  | `Quest111...`                     | Quest program address                |
-| `SKILLS_PROGRAM_ID` | `54CFypri...`                     | Skills Hub program address           |
+| `QUEST_PROGRAM_ID`  | `Quest11111111111111111111111111111111111111`                     | Quest program address                |
+| `SKILLS_PROGRAM_ID` | `SkiLLHUB11111111111111111111111111111111111`                     | Skills Hub program address           |
+| `ZKID_PROGRAM_ID`   | `ZKidentity111111111111111111111111111111111`                     | ZK ID program address                |
 
 ## Examples
 
@@ -151,6 +219,9 @@ PRIVATE_KEY=<base58> tsx examples/quest.ts
 
 # Skills example
 PRIVATE_KEY=<base58> tsx examples/skills.ts
+
+# ZK ID example
+PRIVATE_KEY=<base58> tsx examples/zkid.ts
 ```
 
 ## License

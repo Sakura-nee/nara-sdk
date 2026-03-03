@@ -7,3 +7,7 @@ declare module "snarkjs" {
     ): Promise<{ proof: any; publicSignals: string[] }>;
   };
 }
+
+declare module "circomlibjs" {
+  export function buildPoseidon(): Promise<any>;
+}

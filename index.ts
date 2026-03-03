@@ -8,7 +8,12 @@
 export { NaraSDK, type NaraSDKConfig } from "./src/client";
 
 // Export constants
-export { DEFAULT_RPC_URL, DEFAULT_QUEST_PROGRAM_ID, DEFAULT_SKILLS_PROGRAM_ID } from "./src/constants";
+export {
+  DEFAULT_RPC_URL,
+  DEFAULT_QUEST_PROGRAM_ID,
+  DEFAULT_SKILLS_PROGRAM_ID,
+  DEFAULT_ZKID_PROGRAM_ID,
+} from "./src/constants";
 
 // Export quest functions and types
 export {
@@ -42,6 +47,23 @@ export {
   type SkillInfo,
   type SkillOptions,
 } from "./src/skills";
+
+// Export zkid functions and types
+export {
+  createZkId,
+  getZkIdInfo,
+  deposit,
+  scanClaimableDeposits,
+  withdraw,
+  transferZkId,
+  deriveIdSecret,
+  isValidRecipient,
+  generateValidRecipient,
+  ZKID_DENOMINATIONS,
+  type ZkIdInfo,
+  type ClaimableDeposit,
+  type ZkIdOptions,
+} from "./src/zkid";
 
 // Re-export commonly used types from dependencies
 export { PublicKey, Keypair, Transaction } from "@solana/web3.js";
