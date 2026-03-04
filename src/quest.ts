@@ -48,6 +48,7 @@ export interface QuestInfo {
   rewardCount: number;
   winnerCount: number;
   remainingSlots: number;
+  difficulty: number;
   deadline: number;
   timeRemaining: number;
   expired: boolean;
@@ -224,6 +225,7 @@ export async function getQuestInfo(
     rewardCount: pool.rewardCount,
     winnerCount: pool.winnerCount,
     remainingSlots: Math.max(0, pool.rewardCount - pool.winnerCount),
+    difficulty: pool.difficulty,
     deadline,
     timeRemaining: secsLeft,
     expired: secsLeft <= 0,
