@@ -1,10 +1,10 @@
 {
-  "address": "SkiLLHub11111111111111111111111111111111111",
+  "address": "AgentRegistry111111111111111111111111111111",
   "metadata": {
-    "name": "nara_skills_hub",
+    "name": "nara_agent_registry",
     "version": "0.1.0",
     "spec": "0.1.0",
-    "description": "Created with Anchor"
+    "description": "Nara Agent Registry - AI agent registration center"
   },
   "instructions": [
     {
@@ -23,26 +23,29 @@
         {
           "name": "authority",
           "writable": true,
-          "signer": true
+          "signer": true,
+          "relations": [
+            "agent"
+          ]
         },
         {
-          "name": "skill",
+          "name": "agent",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  115,
-                  107,
-                  105,
-                  108,
-                  108
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
                 ]
               },
               {
                 "kind": "arg",
-                "path": "name"
+                "path": "agent_id"
               }
             ]
           }
@@ -58,83 +61,76 @@
       ],
       "args": [
         {
-          "name": "name",
+          "name": "agent_id",
           "type": "string"
         }
       ]
     },
     {
-      "name": "delete_skill",
+      "name": "delete_agent",
       "discriminator": [
-        17,
-        38,
-        1,
+        92,
+        170,
+        90,
+        13,
+        148,
+        155,
         212,
-        5,
-        56,
-        231,
-        151
+        55
       ],
       "accounts": [
         {
           "name": "authority",
           "writable": true,
-          "signer": true
+          "signer": true,
+          "relations": [
+            "agent"
+          ]
         },
         {
-          "name": "skill",
-          "docs": [
-            "SkillRecord PDA — closed by Anchor after the handler returns."
-          ],
+          "name": "agent",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  115,
-                  107,
-                  105,
-                  108,
-                  108
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
                 ]
               },
               {
                 "kind": "arg",
-                "path": "name"
+                "path": "agent_id"
               }
             ]
           }
         },
         {
-          "name": "description",
-          "docs": [
-            "Closed inside the handler if it has been created."
-          ],
+          "name": "bio",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  100,
-                  101,
-                  115,
-                  99
+                  98,
+                  105,
+                  111
                 ]
               },
               {
                 "kind": "account",
-                "path": "skill"
+                "path": "agent"
               }
             ]
           }
         },
         {
           "name": "metadata",
-          "docs": [
-            "Closed inside the handler if it has been created."
-          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -149,16 +145,13 @@
               },
               {
                 "kind": "account",
-                "path": "skill"
+                "path": "agent"
               }
             ]
           }
         },
         {
-          "name": "content_account",
-          "docs": [
-            "Pass any account (e.g. authority) when skill has no content."
-          ],
+          "name": "memory_account",
           "writable": true
         },
         {
@@ -168,47 +161,50 @@
       ],
       "args": [
         {
-          "name": "name",
+          "name": "agent_id",
           "type": "string"
         }
       ]
     },
     {
-      "name": "finalize_skill_new",
+      "name": "finalize_memory_append",
       "discriminator": [
-        253,
-        108,
-        88,
-        38,
-        27,
-        56,
-        113,
-        217
+        50,
+        204,
+        47,
+        193,
+        90,
+        227,
+        5,
+        220
       ],
       "accounts": [
         {
           "name": "authority",
           "writable": true,
-          "signer": true
+          "signer": true,
+          "relations": [
+            "agent"
+          ]
         },
         {
-          "name": "skill",
+          "name": "agent",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  115,
-                  107,
-                  105,
-                  108,
-                  108
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
                 ]
               },
               {
                 "kind": "arg",
-                "path": "name"
+                "path": "agent_id"
               }
             ]
           }
@@ -218,10 +214,7 @@
           "writable": true
         },
         {
-          "name": "new_content",
-          "docs": [
-            "space = SkillContent::required_size(total_len))."
-          ],
+          "name": "memory",
           "writable": true
         },
         {
@@ -231,47 +224,50 @@
       ],
       "args": [
         {
-          "name": "name",
+          "name": "agent_id",
           "type": "string"
         }
       ]
     },
     {
-      "name": "finalize_skill_update",
+      "name": "finalize_memory_new",
       "discriminator": [
+        215,
+        42,
         43,
-        248,
-        97,
-        58,
-        212,
-        79,
-        238,
-        179
+        208,
+        191,
+        38,
+        11,
+        146
       ],
       "accounts": [
         {
           "name": "authority",
           "writable": true,
-          "signer": true
+          "signer": true,
+          "relations": [
+            "agent"
+          ]
         },
         {
-          "name": "skill",
+          "name": "agent",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  115,
-                  107,
-                  105,
-                  108,
-                  108
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
                 ]
               },
               {
                 "kind": "arg",
-                "path": "name"
+                "path": "agent_id"
               }
             ]
           }
@@ -281,14 +277,7 @@
           "writable": true
         },
         {
-          "name": "new_content",
-          "docs": [
-            "space = SkillContent::required_size(total_len))."
-          ],
-          "writable": true
-        },
-        {
-          "name": "old_content",
+          "name": "new_memory",
           "writable": true
         },
         {
@@ -298,7 +287,74 @@
       ],
       "args": [
         {
-          "name": "name",
+          "name": "agent_id",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "finalize_memory_update",
+      "discriminator": [
+        163,
+        20,
+        118,
+        65,
+        132,
+        16,
+        239,
+        4
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "agent"
+          ]
+        },
+        {
+          "name": "agent",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "agent_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "buffer",
+          "writable": true
+        },
+        {
+          "name": "new_memory",
+          "writable": true
+        },
+        {
+          "name": "old_memory",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "agent_id",
           "type": "string"
         }
       ]
@@ -318,42 +374,41 @@
       "accounts": [
         {
           "name": "authority",
-          "signer": true
+          "signer": true,
+          "relations": [
+            "agent"
+          ]
         },
         {
-          "name": "skill",
+          "name": "agent",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  115,
-                  107,
-                  105,
-                  108,
-                  108
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
                 ]
               },
               {
                 "kind": "arg",
-                "path": "name"
+                "path": "agent_id"
               }
             ]
           }
         },
         {
           "name": "buffer",
-          "docs": [
-            "Pre-created by the client (owner = this program, data all zeros).",
-            "load_init() writes the discriminator + header fields."
-          ],
           "writable": true
         }
       ],
       "args": [
         {
-          "name": "name",
+          "name": "agent_id",
           "type": "string"
         },
         {
@@ -407,16 +462,77 @@
       "args": []
     },
     {
-      "name": "register_skill",
+      "name": "log_activity",
       "discriminator": [
-        166,
-        249,
-        255,
-        189,
-        192,
-        197,
-        102,
-        2
+        158,
+        66,
+        173,
+        69,
+        248,
+        86,
+        13,
+        237
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "agent"
+          ]
+        },
+        {
+          "name": "agent",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "agent_id"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "agent_id",
+          "type": "string"
+        },
+        {
+          "name": "model",
+          "type": "string"
+        },
+        {
+          "name": "activity",
+          "type": "string"
+        },
+        {
+          "name": "log",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "register_agent",
+      "discriminator": [
+        135,
+        157,
+        66,
+        195,
+        2,
+        113,
+        175,
+        30
       ],
       "accounts": [
         {
@@ -425,23 +541,23 @@
           "signer": true
         },
         {
-          "name": "skill",
+          "name": "agent",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  115,
-                  107,
-                  105,
-                  108,
-                  108
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
                 ]
               },
               {
                 "kind": "arg",
-                "path": "name"
+                "path": "agent_id"
               }
             ]
           }
@@ -475,71 +591,69 @@
       ],
       "args": [
         {
-          "name": "name",
-          "type": "string"
-        },
-        {
-          "name": "author",
+          "name": "agent_id",
           "type": "string"
         }
       ]
     },
     {
-      "name": "set_description",
+      "name": "set_bio",
       "discriminator": [
-        234,
-        4,
-        121,
-        243,
-        47,
-        60,
-        8,
-        236
+        196,
+        133,
+        219,
+        43,
+        75,
+        223,
+        195,
+        213
       ],
       "accounts": [
         {
           "name": "authority",
           "writable": true,
-          "signer": true
+          "signer": true,
+          "relations": [
+            "agent"
+          ]
         },
         {
-          "name": "skill",
+          "name": "agent",
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  115,
-                  107,
-                  105,
-                  108,
-                  108
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
                 ]
               },
               {
                 "kind": "arg",
-                "path": "name"
+                "path": "agent_id"
               }
             ]
           }
         },
         {
-          "name": "description_account",
+          "name": "bio_account",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  100,
-                  101,
-                  115,
-                  99
+                  98,
+                  105,
+                  111
                 ]
               },
               {
                 "kind": "account",
-                "path": "skill"
+                "path": "agent"
               }
             ]
           }
@@ -551,11 +665,90 @@
       ],
       "args": [
         {
-          "name": "name",
+          "name": "agent_id",
           "type": "string"
         },
         {
-          "name": "description",
+          "name": "bio",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "set_metadata",
+      "discriminator": [
+        78,
+        157,
+        75,
+        242,
+        151,
+        20,
+        121,
+        144
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "agent"
+          ]
+        },
+        {
+          "name": "agent",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "agent_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "metadata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "agent"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "agent_id",
+          "type": "string"
+        },
+        {
+          "name": "data",
           "type": "string"
         }
       ]
@@ -575,26 +768,29 @@
       "accounts": [
         {
           "name": "authority",
-          "signer": true
+          "signer": true,
+          "relations": [
+            "agent"
+          ]
         },
         {
-          "name": "skill",
+          "name": "agent",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  115,
-                  107,
-                  105,
-                  108,
-                  108
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
                 ]
               },
               {
                 "kind": "arg",
-                "path": "name"
+                "path": "agent_id"
               }
             ]
           }
@@ -602,7 +798,7 @@
       ],
       "args": [
         {
-          "name": "name",
+          "name": "agent_id",
           "type": "string"
         },
         {
@@ -626,7 +822,10 @@
       "accounts": [
         {
           "name": "admin",
-          "signer": true
+          "signer": true,
+          "relations": [
+            "config"
+          ]
         },
         {
           "name": "config",
@@ -670,7 +869,10 @@
       "accounts": [
         {
           "name": "admin",
-          "signer": true
+          "signer": true,
+          "relations": [
+            "config"
+          ]
         },
         {
           "name": "config",
@@ -700,82 +902,6 @@
       ]
     },
     {
-      "name": "update_metadata",
-      "discriminator": [
-        170,
-        182,
-        43,
-        239,
-        97,
-        78,
-        225,
-        186
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "skill",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  115,
-                  107,
-                  105,
-                  108,
-                  108
-                ]
-              },
-              {
-                "kind": "arg",
-                "path": "name"
-              }
-            ]
-          }
-        },
-        {
-          "name": "metadata",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  109,
-                  101,
-                  116,
-                  97
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "skill"
-              }
-            ]
-          }
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "name",
-          "type": "string"
-        },
-        {
-          "name": "data",
-          "type": "string"
-        }
-      ]
-    },
-    {
       "name": "update_register_fee",
       "discriminator": [
         16,
@@ -790,7 +916,10 @@
       "accounts": [
         {
           "name": "admin",
-          "signer": true
+          "signer": true,
+          "relations": [
+            "config"
+          ]
         },
         {
           "name": "config",
@@ -834,25 +963,28 @@
       "accounts": [
         {
           "name": "authority",
-          "signer": true
+          "signer": true,
+          "relations": [
+            "agent"
+          ]
         },
         {
-          "name": "skill",
+          "name": "agent",
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  115,
-                  107,
-                  105,
-                  108,
-                  108
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
                 ]
               },
               {
                 "kind": "arg",
-                "path": "name"
+                "path": "agent_id"
               }
             ]
           }
@@ -864,7 +996,7 @@
       ],
       "args": [
         {
-          "name": "name",
+          "name": "agent_id",
           "type": "string"
         },
         {
@@ -880,6 +1012,32 @@
   ],
   "accounts": [
     {
+      "name": "AgentRecord",
+      "discriminator": [
+        4,
+        201,
+        129,
+        70,
+        197,
+        134,
+        47,
+        169
+      ]
+    },
+    {
+      "name": "MemoryBuffer",
+      "discriminator": [
+        58,
+        228,
+        180,
+        234,
+        11,
+        227,
+        220,
+        144
+      ]
+    },
+    {
       "name": "ProgramConfig",
       "discriminator": [
         196,
@@ -891,163 +1049,249 @@
         140,
         63
       ]
-    },
+    }
+  ],
+  "events": [
     {
-      "name": "SkillBuffer",
+      "name": "ActivityLogged",
       "discriminator": [
-        217,
-        98,
-        189,
-        63,
-        233,
-        27,
-        210,
-        167
-      ]
-    },
-    {
-      "name": "SkillDescription",
-      "discriminator": [
-        58,
-        166,
-        16,
-        132,
-        106,
-        56,
-        181,
-        142
-      ]
-    },
-    {
-      "name": "SkillMetadata",
-      "discriminator": [
-        104,
-        219,
-        78,
-        200,
-        70,
-        39,
-        68,
-        145
-      ]
-    },
-    {
-      "name": "SkillRecord",
-      "discriminator": [
-        228,
-        44,
-        57,
-        187,
-        245,
-        201,
-        7,
-        203
+        33,
+        168,
+        103,
+        55,
+        141,
+        197,
+        74,
+        39
       ]
     }
   ],
   "errors": [
     {
       "code": 6000,
-      "name": "NameTooShort",
-      "msg": "Name too short: min 5 bytes"
+      "name": "AgentIdTooShort",
+      "msg": "Agent ID too short: min 5 bytes"
     },
     {
       "code": 6001,
-      "name": "NameTooLong",
-      "msg": "Name too long: max 32 bytes"
-    },
-    {
-      "code": 6002,
-      "name": "DescriptionTooLong",
-      "msg": "Description too long: max 512 bytes"
-    },
-    {
-      "code": 6003,
       "name": "Unauthorized",
       "msg": "Unauthorized"
     },
     {
-      "code": 6004,
+      "code": 6002,
       "name": "OffsetMismatch",
       "msg": "Buffer write offset mismatch: writes must be sequential"
     },
     {
-      "code": 6005,
+      "code": 6003,
       "name": "WriteOutOfBounds",
       "msg": "Write out of bounds"
     },
     {
-      "code": 6006,
+      "code": 6004,
       "name": "BufferIncomplete",
       "msg": "Buffer not fully written"
     },
     {
-      "code": 6007,
+      "code": 6005,
       "name": "PendingBufferExists",
       "msg": "A pending buffer already exists; call close_buffer first"
     },
     {
-      "code": 6008,
+      "code": 6006,
       "name": "InvalidBufferSize",
       "msg": "Buffer account size does not match total_len"
     },
     {
-      "code": 6009,
+      "code": 6007,
       "name": "InvalidBufferOwner",
       "msg": "Buffer account must be owned by this program"
     },
     {
-      "code": 6010,
+      "code": 6008,
       "name": "BufferMismatch",
-      "msg": "Buffer account does not match skill.pending_buffer"
+      "msg": "Buffer account does not match agent.pending_buffer"
+    },
+    {
+      "code": 6009,
+      "name": "InvalidMemoryOwner",
+      "msg": "Memory account must be owned by this program"
+    },
+    {
+      "code": 6010,
+      "name": "InvalidMemorySize",
+      "msg": "Memory account size does not match buffer total_len"
     },
     {
       "code": 6011,
-      "name": "InvalidContentOwner",
-      "msg": "Content account must be owned by this program"
+      "name": "MemoryMismatch",
+      "msg": "old_memory account does not match agent.memory"
     },
     {
       "code": 6012,
-      "name": "InvalidContentSize",
-      "msg": "Content account size does not match buffer total_len"
+      "name": "MemoryAlreadyExists",
+      "msg": "Agent already has memory; use finalize_memory_update or finalize_memory_append instead"
     },
     {
       "code": 6013,
-      "name": "ContentMismatch",
-      "msg": "old_content account does not match skill.content"
+      "name": "MemoryNotFound",
+      "msg": "Agent has no existing memory; use finalize_memory_new instead"
     },
     {
       "code": 6014,
-      "name": "ContentAlreadyExists",
-      "msg": "Skill already has content; use finalize_skill_update instead"
-    },
-    {
-      "code": 6015,
-      "name": "ContentNotFound",
-      "msg": "Skill has no existing content; use finalize_skill_new instead"
-    },
-    {
-      "code": 6016,
       "name": "HasPendingBuffer",
       "msg": "Cannot perform this operation while a pending buffer exists"
     },
     {
-      "code": 6017,
+      "code": 6015,
       "name": "InvalidFeeRecipient",
       "msg": "Fee recipient does not match config.fee_recipient"
-    },
-    {
-      "code": 6018,
-      "name": "AuthorTooLong",
-      "msg": "Author name too long: max 64 bytes"
-    },
-    {
-      "code": 6019,
-      "name": "MetadataTooLong",
-      "msg": "Metadata too long: max 800 bytes"
     }
   ],
   "types": [
+    {
+      "name": "ActivityLogged",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "agent_id",
+            "type": "string"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "model",
+            "type": "string"
+          },
+          {
+            "name": "activity",
+            "type": "string"
+          },
+          {
+            "name": "log",
+            "type": "string"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "AgentRecord",
+      "docs": [
+        "PDA metadata account for an agent, seeds = [b\"agent\", agent_id.as_bytes()]."
+      ],
+      "serialization": "bytemuck",
+      "repr": {
+        "kind": "c"
+      },
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "pending_buffer",
+            "type": "pubkey"
+          },
+          {
+            "name": "memory",
+            "type": "pubkey"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "updated_at",
+            "type": "i64"
+          },
+          {
+            "name": "version",
+            "type": "u32"
+          },
+          {
+            "name": "agent_id_len",
+            "type": "u8"
+          },
+          {
+            "name": "_padding",
+            "type": {
+              "array": [
+                "u8",
+                3
+              ]
+            }
+          },
+          {
+            "name": "agent_id",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "_reserved",
+            "type": {
+              "array": [
+                "u8",
+                64
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "MemoryBuffer",
+      "docs": [
+        "Client-created zero-copy account for chunked uploads.",
+        "Fixed header followed by raw data bytes."
+      ],
+      "serialization": "bytemuck",
+      "repr": {
+        "kind": "c"
+      },
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "agent",
+            "type": "pubkey"
+          },
+          {
+            "name": "total_len",
+            "type": "u32"
+          },
+          {
+            "name": "write_offset",
+            "type": "u32"
+          },
+          {
+            "name": "_reserved",
+            "type": {
+              "array": [
+                "u8",
+                64
+              ]
+            }
+          }
+        ]
+      }
+    },
     {
       "name": "ProgramConfig",
       "docs": [
@@ -1063,279 +1307,15 @@
         "fields": [
           {
             "name": "admin",
-            "docs": [
-              "Who may call update_admin / update_fee_recipient / update_register_fee."
-            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "fee_recipient",
             "type": "pubkey"
           },
           {
             "name": "register_fee",
-            "docs": [
-              "SOL fee (in lamports) charged on every `register_skill`. 0 = free."
-            ],
             "type": "u64"
-          },
-          {
-            "name": "fee_recipient",
-            "docs": [
-              "Account that receives registration fees. Defaults to admin at init."
-            ],
-            "type": "pubkey"
-          },
-          {
-            "name": "_reserved",
-            "type": {
-              "array": [
-                "u8",
-                64
-              ]
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "SkillBuffer",
-      "docs": [
-        "Client-created zero-copy account (owner = program) used for chunked uploads.",
-        "Fixed header followed by raw data bytes.",
-        "",
-        "The client calls `system_program::create_account` with",
-        "`space = SkillBuffer::required_size(total_len), owner = program_id`",
-        "then calls `init_buffer`, which uses `load_init()` to write the header.",
-        "Subsequent `write_to_buffer` calls advance `write_offset` sequentially."
-      ],
-      "serialization": "bytemuck",
-      "repr": {
-        "kind": "c"
-      },
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "authority",
-            "docs": [
-              "Must match the SkillRecord's authority."
-            ],
-            "type": "pubkey"
-          },
-          {
-            "name": "skill",
-            "docs": [
-              "The SkillRecord PDA this buffer is uploading to."
-            ],
-            "type": "pubkey"
-          },
-          {
-            "name": "total_len",
-            "docs": [
-              "Expected total number of data bytes."
-            ],
-            "type": "u32"
-          },
-          {
-            "name": "write_offset",
-            "docs": [
-              "Current write cursor. Each `write_to_buffer` call advances this.",
-              "Client supplies the expected offset; contract rejects mismatches."
-            ],
-            "type": "u32"
-          },
-          {
-            "name": "_reserved",
-            "type": {
-              "array": [
-                "u8",
-                64
-              ]
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "SkillDescription",
-      "docs": [
-        "PDA for a skill's short description, seeds = [b\"desc\", skill_record.key()].",
-        "Created / updated via `set_description`. Always allocated at fixed size."
-      ],
-      "serialization": "bytemuck",
-      "repr": {
-        "kind": "c"
-      },
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "description_len",
-            "docs": [
-              "Length of the description stored in the `description` array."
-            ],
-            "type": "u16"
-          },
-          {
-            "name": "description",
-            "docs": [
-              "One-sentence description (max 512 bytes)."
-            ],
-            "type": {
-              "array": [
-                "u8",
-                512
-              ]
-            }
-          },
-          {
-            "name": "_reserved",
-            "type": {
-              "array": [
-                "u8",
-                64
-              ]
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "SkillMetadata",
-      "docs": [
-        "PDA for a skill's custom JSON metadata, seeds = [b\"meta\", skill_record.key()].",
-        "Created lazily on first `update_metadata` call.",
-        "Always allocated at fixed size."
-      ],
-      "serialization": "bytemuck",
-      "repr": {
-        "kind": "c"
-      },
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "data_len",
-            "docs": [
-              "Length of the data stored in the `data` array."
-            ],
-            "type": "u16"
-          },
-          {
-            "name": "data",
-            "docs": [
-              "Arbitrary JSON string (max 800 bytes)."
-            ],
-            "type": {
-              "array": [
-                "u8",
-                800
-              ]
-            }
-          },
-          {
-            "name": "_reserved",
-            "type": {
-              "array": [
-                "u8",
-                64
-              ]
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "SkillRecord",
-      "docs": [
-        "PDA metadata account for a skill, seeds = [b\"skill\", name.as_bytes()].",
-        "Stores the authority, a pointer to the content account, and an optional",
-        "pending-buffer pointer. Created by the contract via `register_skill`."
-      ],
-      "serialization": "bytemuck",
-      "repr": {
-        "kind": "c"
-      },
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "authority",
-            "docs": [
-              "Who may update this skill."
-            ],
-            "type": "pubkey"
-          },
-          {
-            "name": "content",
-            "docs": [
-              "Current SkillContent account. Pubkey::default() = no content yet."
-            ],
-            "type": "pubkey"
-          },
-          {
-            "name": "pending_buffer",
-            "docs": [
-              "Active upload buffer, if any. Pubkey::default() = no pending buffer."
-            ],
-            "type": "pubkey"
-          },
-          {
-            "name": "created_at",
-            "docs": [
-              "Unix timestamp when the skill was first registered."
-            ],
-            "type": "i64"
-          },
-          {
-            "name": "updated_at",
-            "docs": [
-              "Unix timestamp of the last content update (0 = no content yet)."
-            ],
-            "type": "i64"
-          },
-          {
-            "name": "version",
-            "docs": [
-              "Content version. 0 = no content yet, set to 1 on first upload,",
-              "incremented by 1 on every subsequent update."
-            ],
-            "type": "u32"
-          },
-          {
-            "name": "name_len",
-            "docs": [
-              "Length of the name stored in the `name` array."
-            ],
-            "type": "u16"
-          },
-          {
-            "name": "author_len",
-            "docs": [
-              "Length of the author stored in the `author` array."
-            ],
-            "type": "u16"
-          },
-          {
-            "name": "name",
-            "docs": [
-              "Globally unique name (min 5 bytes, max 32 bytes)."
-            ],
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "author",
-            "docs": [
-              "Display name of the skill author (max 64 bytes)."
-            ],
-            "type": {
-              "array": [
-                "u8",
-                64
-              ]
-            }
           },
           {
             "name": "_reserved",

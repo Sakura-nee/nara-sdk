@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/nara_zk.json`.
  */
 export type NaraZk = {
-  "address": "Dp4Jb4fmfK1HHVzjMAnWumE5iLuzDsfc4VdRVL7XmY82",
+  "address": "ZKidentity111111111111111111111111111111111",
   "metadata": {
     "name": "naraZk",
     "version": "0.1.0",
@@ -180,7 +180,7 @@ export type NaraZk = {
         {
           "name": "pool",
           "docs": [
-            "Pool is small (PoolAccount::SIZE = 17 bytes), safe to init in-transaction."
+            "Pool is small, safe to init in-transaction."
           ],
           "writable": true,
           "pda": {
@@ -287,7 +287,7 @@ export type NaraZk = {
         {
           "name": "zkId",
           "docs": [
-            "ZkIdAccount is small (81 bytes), init in-transaction is fine."
+            "ZkIdAccount is small, init in-transaction is fine."
           ],
           "writable": true,
           "pda": {
@@ -463,10 +463,7 @@ export type NaraZk = {
       "accounts": [
         {
           "name": "admin",
-          "signer": true,
-          "relations": [
-            "config"
-          ]
+          "signer": true
         },
         {
           "name": "config",
@@ -820,6 +817,10 @@ export type NaraZk = {
         "Program config. PDA seeds: [\"config\"]",
         "Stores admin, fee recipient, and registration fee amount."
       ],
+      "serialization": "bytemuck",
+      "repr": {
+        "kind": "c"
+      },
       "type": {
         "kind": "struct",
         "fields": [
@@ -834,10 +835,6 @@ export type NaraZk = {
           {
             "name": "feeAmount",
             "type": "u64"
-          },
-          {
-            "name": "bump",
-            "type": "u8"
           }
         ]
       }
@@ -872,7 +869,7 @@ export type NaraZk = {
       "docs": [
         "Inbox ring buffer. PDA seeds: [\"inbox\", name_hash]",
         "Zero-copy. INBOX_SIZE = 64 (power of 2 for bytemuck compatibility).",
-        "Layout: entries(64×16=1024) + head(1) + count(1) + bump(1) + _pad(5) = 1032 bytes"
+        "SIZE = 8 + size_of::<Self>()"
       ],
       "serialization": "bytemuck",
       "repr": {
@@ -903,15 +900,11 @@ export type NaraZk = {
             "type": "u8"
           },
           {
-            "name": "bump",
-            "type": "u8"
-          },
-          {
             "name": "pad",
             "type": {
               "array": [
                 "u8",
-                5
+                6
               ]
             }
           }
@@ -946,9 +939,7 @@ export type NaraZk = {
         "Layout (offsets within struct data, after 8-byte discriminator):",
         "0: levels(4), 4: current_root_index(4)",
         "8: next_index(8, u64, 8-byte aligned ✓), 16: denomination(8)",
-        "24: bump(1), 25: _pad(7) → 32",
-        "32: filled_subtrees(64×32=2048) → 2080: roots(30×32=960) → 3040: zeros(64×32=2048)",
-        "Struct size: 5088 bytes (multiple of 8 ✓) → SIZE = 5096",
+        "24: filled_subtrees → roots → zeros",
         "",
         "`zeros[i]` = empty-subtree hash at level i, computed once in init() and",
         "reused by insert() to avoid re-hashing on every deposit."
@@ -975,19 +966,6 @@ export type NaraZk = {
           {
             "name": "denomination",
             "type": "u64"
-          },
-          {
-            "name": "bump",
-            "type": "u8"
-          },
-          {
-            "name": "pad",
-            "type": {
-              "array": [
-                "u8",
-                7
-              ]
-            }
           },
           {
             "name": "filledSubtrees",
@@ -1037,16 +1015,12 @@ export type NaraZk = {
     {
       "name": "nullifierAccount",
       "docs": [
-        "Nullifier marker. PDA seeds: [\"nullifier\", denomination_le_bytes, nullifier_hash]"
+        "Nullifier marker. PDA seeds: [\"nullifier\", denomination_le_bytes, nullifier_hash]",
+        "Empty account — existence alone proves the nullifier was used."
       ],
       "type": {
         "kind": "struct",
-        "fields": [
-          {
-            "name": "bump",
-            "type": "u8"
-          }
-        ]
+        "fields": []
       }
     },
     {
@@ -1060,10 +1034,6 @@ export type NaraZk = {
           {
             "name": "denomination",
             "type": "u64"
-          },
-          {
-            "name": "bump",
-            "type": "u8"
           }
         ]
       }
@@ -1139,10 +1109,6 @@ export type NaraZk = {
           {
             "name": "commitmentStartIndex",
             "type": "u32"
-          },
-          {
-            "name": "bump",
-            "type": "u8"
           }
         ]
       }

@@ -7,6 +7,7 @@ import {
   Keypair,
   LAMPORTS_PER_SOL,
   PublicKey,
+  Transaction,
 } from "@solana/web3.js";
 import * as anchor from "@coral-xyz/anchor";
 import { Program, AnchorProvider, Wallet } from "@coral-xyz/anchor";
@@ -78,6 +79,13 @@ export interface QuestOptions {
   programId?: string;
   circuitWasmPath?: string;
   zkeyPath?: string;
+}
+
+export interface ActivityLog {
+  agentId: string;
+  model: string;
+  activity: string;
+  log: string;
 }
 
 // ─── ZK utilities ────────────────────────────────────────────────
@@ -287,7 +295,9 @@ export async function generateProof(
 }
 
 /**
- * Submit a quest answer on-chain (direct submission, requires gas)
+ * Submit a quest answer on-chain (direct submission, requires gas).
+ * If `activityLog` is provided, a logActivity instruction from the Agent Registry
+ * is appended to the same transaction.
  */
 export async function submitAnswer(
   connection: Connection,
@@ -295,9 +305,36 @@ export async function submitAnswer(
   proof: ZkProof,
   agent: string = "",
   model: string = "",
-  options?: QuestOptions
+  options?: QuestOptions,
+  activityLog?: ActivityLog
 ): Promise<SubmitAnswerResult> {
   const program = createProgram(connection, wallet, options?.programId);
+
+  if (activityLog) {
+    const { makeLogActivityIx } = await import("./agent_registry");
+    const submitIx = await program.methods
+      .submitAnswer(proof.proofA as any, proof.proofB as any, proof.proofC as any, agent, model)
+      .accounts({ user: wallet.publicKey, payer: wallet.publicKey })
+      .instruction();
+    const logIx = await makeLogActivityIx(
+      connection,
+      wallet.publicKey,
+      activityLog.agentId,
+      activityLog.model,
+      activityLog.activity,
+      activityLog.log
+    );
+    const tx = new Transaction().add(submitIx).add(logIx);
+    tx.feePayer = wallet.publicKey;
+    tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+    tx.sign(wallet);
+    const signature = await connection.sendRawTransaction(tx.serialize(), {
+      skipPreflight: true,
+    });
+    await connection.confirmTransaction(signature, "confirmed");
+    return { signature };
+  }
+
   const signature = await program.methods
     .submitAnswer(proof.proofA as any, proof.proofB as any, proof.proofC as any, agent, model)
     .accounts({ user: wallet.publicKey, payer: wallet.publicKey })

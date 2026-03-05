@@ -31,3 +31,9 @@ export const DEFAULT_SKILLS_PROGRAM_ID =
  */
 export const DEFAULT_ZKID_PROGRAM_ID =
   process.env.ZKID_PROGRAM_ID || "ZKidentity111111111111111111111111111111111";
+
+/**
+ * Agent Registry program ID
+ */
+export const DEFAULT_AGENT_REGISTRY_PROGRAM_ID =
+  process.env.AGENT_REGISTRY_PROGRAM_ID || "8VNuYRUPWyTx2tuKX1Mxq7TZHuA5gbT3LpgGUe9XC3iY";

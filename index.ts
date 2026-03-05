@@ -13,6 +13,7 @@ export {
   DEFAULT_QUEST_PROGRAM_ID,
   DEFAULT_SKILLS_PROGRAM_ID,
   DEFAULT_ZKID_PROGRAM_ID,
+  DEFAULT_AGENT_REGISTRY_PROGRAM_ID,
 } from "./src/constants";
 
 // Export quest functions and types
@@ -29,6 +30,7 @@ export {
   type SubmitAnswerResult,
   type SubmitRelayResult,
   type QuestOptions,
+  type ActivityLog,
 } from "./src/quest";
 
 // Export skills functions and types
@@ -66,6 +68,31 @@ export {
   type ClaimableDeposit,
   type ZkIdOptions,
 } from "./src/zkid";
+
+// Export agent registry functions and types
+export {
+  registerAgent,
+  getAgentRecord,
+  getAgentInfo,
+  getAgentMemory,
+  getConfig as getAgentRegistryConfig,
+  setBio,
+  setMetadata,
+  uploadMemory,
+  closeBuffer as closeAgentBuffer,
+  transferAgentAuthority,
+  deleteAgent,
+  logActivity,
+  makeLogActivityIx,
+  initConfig as initAgentRegistryConfig,
+  updateAdmin,
+  updateFeeRecipient,
+  updateRegisterFee,
+  type AgentRecord,
+  type AgentInfo,
+  type MemoryMode,
+  type AgentRegistryOptions,
+} from "./src/agent_registry";
 
 // Re-export commonly used types from dependencies
 export { PublicKey, Keypair, Transaction } from "@solana/web3.js";
