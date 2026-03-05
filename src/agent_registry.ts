@@ -21,11 +21,11 @@ import naraAgentRegistryIdl from "./idls/nara_agent_registry.json";
 /** Max bytes written per write_to_buffer call (Solana tx size limit) */
 const DEFAULT_CHUNK_SIZE = 800;
 
-/** MemoryBuffer account header: 8 discriminator + 32 authority + 32 agent + 4 total_len + 4 write_offset */
-const BUFFER_HEADER_SIZE = 80;
+/** MemoryBuffer account header: 8 discriminator + 32 authority + 32 agent + 4 total_len + 4 write_offset + 64 _reserved */
+const BUFFER_HEADER_SIZE = 144;
 
-/** AgentMemory account header: 8 discriminator + 32 agent */
-const MEMORY_HEADER_SIZE = 40;
+/** AgentMemory account header: 8 discriminator + 32 agent + 64 _reserved */
+const MEMORY_HEADER_SIZE = 104;
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
@@ -147,10 +147,16 @@ function getMetaPda(programId: PublicKey, agentPubkey: PublicKey): PublicKey {
 }
 
 function mapAgentRecord(raw: any): AgentRecord {
+  // agentId is now a fixed [u8; 32] array with agentIdLen prefix (bytemuck)
+  const agentIdLen = raw.agentIdLen as number;
+  const agentIdBytes = raw.agentId as number[];
+  const agentId = Buffer.from(agentIdBytes.slice(0, agentIdLen)).toString("utf-8");
+
+  const pendingBuffer = raw.pendingBuffer as PublicKey;
   return {
     authority: raw.authority as PublicKey,
-    agentId: raw.agentId as string,
-    pendingBuffer: (raw.pendingBuffer as PublicKey | null) ?? null,
+    agentId,
+    pendingBuffer: pendingBuffer.equals(PublicKey.default) ? null : pendingBuffer,
     memory: raw.memory as PublicKey,
     version: raw.version as number,
     createdAt: (raw.createdAt as anchor.BN).toNumber(),
@@ -158,13 +164,17 @@ function mapAgentRecord(raw: any): AgentRecord {
   };
 }
 
+/** Bio/Metadata header: 8-byte discriminator + 64-byte _reserved */
+const BIO_META_HEADER_SIZE = 72;
+
 /**
- * Deserialize a Borsh string from raw account data.
- * Layout: 8-byte discriminator + 4-byte u32 length + UTF-8 bytes.
+ * Deserialize a string from raw bio/metadata account data.
+ * Layout: 8-byte discriminator + 64-byte _reserved + 4-byte u32 length + UTF-8 bytes.
  */
-function deserializeBorshString(data: Buffer): string {
-  const len = data.readUInt32LE(8);
-  return data.subarray(12, 12 + len).toString("utf-8");
+function deserializeRawString(data: Buffer): string {
+  const len = data.readUInt32LE(BIO_META_HEADER_SIZE);
+  const start = BIO_META_HEADER_SIZE + 4;
+  return data.subarray(start, start + len).toString("utf-8");
 }
 
 // ─── Read-only SDK functions ────────────────────────────────────
@@ -204,14 +214,14 @@ export async function getAgentInfo(
 
   try {
     const bioInfo = await connection.getAccountInfo(bioPda);
-    if (bioInfo) bio = deserializeBorshString(Buffer.from(bioInfo.data));
+    if (bioInfo) bio = deserializeRawString(Buffer.from(bioInfo.data));
   } catch {
     // account not created yet
   }
 
   try {
     const metaInfo = await connection.getAccountInfo(metaPda);
-    if (metaInfo) metadata = deserializeBorshString(Buffer.from(metaInfo.data));
+    if (metaInfo) metadata = deserializeRawString(Buffer.from(metaInfo.data));
   } catch {
     // account not created yet
   }
@@ -526,8 +536,8 @@ export async function closeBuffer(
   const program = createProgram(connection, wallet, options?.programId);
   const agentPda = getAgentPda(program.programId, agentId);
   const raw = await program.account.agentRecord.fetch(agentPda);
-  const bufferPubkey = raw.pendingBuffer as PublicKey | null;
-  if (!bufferPubkey) {
+  const bufferPubkey = raw.pendingBuffer as PublicKey;
+  if (bufferPubkey.equals(PublicKey.default)) {
     throw new Error(`Agent "${agentId}" has no pending buffer`);
   }
   return program.methods

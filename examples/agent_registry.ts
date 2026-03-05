@@ -6,10 +6,13 @@
  * 2. Set bio and metadata
  * 3. Upload agent memory (chunked buffer mechanism)
  * 4. Query agent info and read memory
- * 5. Update memory / append memory
- * 6. Log activity
- * 7. Transfer authority
- * 8. Delete agent
+ * 5. Update memory
+ * 6. Verify memory
+ * 7. Update memory (replace)
+ * 8. Append memory
+ * 9. Log activity
+ * 10. Transfer authority
+ * 11. Delete agent
  *
  * Prerequisites:
  * - Set PRIVATE_KEY environment variable (base58 or JSON array)
@@ -167,7 +170,53 @@ async function main() {
   const updatedRecord = await getAgentRecord(connection, agentId);
   console.log("New version:", updatedRecord.version);
 
-  // ── 8. Log activity ───────────────────────────────────────────
+  // ── 8. Append memory ────────────────────────────────────────
+  console.log("\n--- Appending to memory ---");
+  const appendData = Buffer.from(
+    JSON.stringify({
+      appendedFact: "This was appended to existing memory.",
+      appendedAt: new Date().toISOString(),
+    })
+  );
+  console.log(`Append size: ${appendData.length} bytes`);
+
+  const appendSig = await uploadMemory(
+    connection,
+    wallet,
+    agentId,
+    appendData,
+    {
+      onProgress(chunkIndex, totalChunks, sig) {
+        console.log(`  [${chunkIndex}/${totalChunks}] tx: ${sig}`);
+      },
+    },
+    "append"
+  );
+  console.log("Finalize tx:", appendSig);
+
+  const appendedRecord = await getAgentRecord(connection, agentId);
+  console.log("New version:", appendedRecord.version);
+
+  // Verify appended memory
+  const appendedMemory = await getAgentMemory(connection, agentId);
+  if (!appendedMemory) {
+    console.log("ERROR: no memory found after append");
+  } else {
+    const expectedLen = updatedMemory.length + appendData.length;
+    console.log(
+      `Memory size after append: ${appendedMemory.length} bytes (expected ${expectedLen})`
+    );
+    // The first part should be the updated memory, the second part is the appended data
+    const firstPart = appendedMemory.subarray(0, updatedMemory.length);
+    const secondPart = appendedMemory.subarray(updatedMemory.length);
+    if (firstPart.equals(updatedMemory) && secondPart.equals(appendData)) {
+      console.log("OK: appended memory matches expected content");
+    } else {
+      console.log("MISMATCH: appended memory content differs");
+    }
+  }
+
+  // ── 9. Log activity ───────────────────────────────────────────
   console.log("\n--- Logging activity ---");
   const actSig = await logActivity(
     connection,
@@ -179,7 +228,7 @@ async function main() {
   );
   console.log("Transaction:", actSig);
 
-  // ── 9. Transfer authority (optional) ──────────────────────────
+  // ── 10. Transfer authority (optional) ─────────────────────────
   // Uncomment and set NEW_AUTHORITY to transfer ownership.
   // const newAuthority = new PublicKey(process.env.NEW_AUTHORITY!);
   // console.log("\n--- Transferring authority ---");
@@ -191,7 +240,7 @@ async function main() {
   // );
   // console.log("Transaction:", transferSig);
 
-  // ── 10. Delete agent (optional) ───────────────────────────────
+  // ── 11. Delete agent (optional) ───────────────────────────────
   // Uncomment to delete the agent and reclaim all rent.
   // console.log("\n--- Deleting agent ---");
   // const deleteSig = await deleteAgent(connection, wallet, agentId);

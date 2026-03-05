@@ -20,11 +20,11 @@ import naraSkillsIdl from "./idls/nara_skills_hub.json";
 /** Max bytes written per write_to_buffer call (Solana tx size limit) */
 const DEFAULT_CHUNK_SIZE = 800;
 
-/** SkillBuffer account header size: 8 discriminator + 32 authority + 32 skill + 4 total_len + 4 write_offset */
-const BUFFER_HEADER_SIZE = 80;
+/** SkillBuffer account header size: 8 discriminator + 32 authority + 32 skill + 4 total_len + 4 write_offset + 64 _reserved */
+const BUFFER_HEADER_SIZE = 144;
 
-/** SkillContent account header size: 8 discriminator + 32 skill */
-const CONTENT_HEADER_SIZE = 40;
+/** SkillContent account header size: 8 discriminator + 32 skill + 64 _reserved */
+const CONTENT_HEADER_SIZE = 104;
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
@@ -148,11 +148,21 @@ function getMetaPda(programId: PublicKey, skillPubkey: PublicKey): PublicKey {
 }
 
 function mapSkillRecord(raw: any): SkillRecord {
+  // name/author are now fixed [u8; N] arrays with length prefixes (bytemuck)
+  const nameLen = raw.nameLen as number;
+  const nameBytes = raw.name as number[];
+  const name = Buffer.from(nameBytes.slice(0, nameLen)).toString("utf-8");
+
+  const authorLen = raw.authorLen as number;
+  const authorBytes = raw.author as number[];
+  const author = Buffer.from(authorBytes.slice(0, authorLen)).toString("utf-8");
+
+  const pendingBuffer = raw.pendingBuffer as PublicKey;
   return {
     authority: raw.authority as PublicKey,
-    name: raw.name as string,
-    author: raw.author as string,
-    pendingBuffer: (raw.pendingBuffer as PublicKey | null) ?? null,
+    name,
+    author,
+    pendingBuffer: pendingBuffer.equals(PublicKey.default) ? null : pendingBuffer,
     content: raw.content as PublicKey,
     version: raw.version as number,
     createdAt: (raw.createdAt as anchor.BN).toNumber(),
@@ -225,14 +235,18 @@ export async function getSkillInfo(
 
   try {
     const descAcc = await program.account.skillDescription.fetch(descPda);
-    description = descAcc.description as string;
+    const descLen = descAcc.descriptionLen as number;
+    const descBytes = descAcc.description as number[];
+    description = Buffer.from(descBytes.slice(0, descLen)).toString("utf-8");
   } catch {
     // account not created yet
   }
 
   try {
     const metaAcc = await program.account.skillMetadata.fetch(metaPda);
-    metadata = metaAcc.data as string;
+    const dataLen = metaAcc.dataLen as number;
+    const dataBytes = metaAcc.data as number[];
+    metadata = Buffer.from(dataBytes.slice(0, dataLen)).toString("utf-8");
   } catch {
     // account not created yet
   }
@@ -331,8 +345,8 @@ export async function closeBuffer(
   const program = createProgram(connection, wallet, options?.programId);
   const skillPda = getSkillPda(program.programId, name);
   const raw = await program.account.skillRecord.fetch(skillPda);
-  const bufferPubkey = raw.pendingBuffer as PublicKey | null;
-  if (!bufferPubkey) {
+  const bufferPubkey = raw.pendingBuffer as PublicKey;
+  if (bufferPubkey.equals(PublicKey.default)) {
     throw new Error(`Skill "${name}" has no pending buffer`);
   }
   return program.methods
@@ -483,4 +497,75 @@ export async function uploadSkillContent(
       .signers([wallet])
       .rpc();
   }
+}
+
+// ─── Admin functions ────────────────────────────────────────────
+
+/**
+ * Initialize the program configuration (one-time setup).
+ * The caller becomes the admin.
+ */
+export async function initConfig(
+  connection: Connection,
+  wallet: Keypair,
+  options?: SkillOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  return program.methods
+    .initConfig()
+    .accounts({ admin: wallet.publicKey } as any)
+    .signers([wallet])
+    .rpc();
+}
+
+/**
+ * Update the program admin (admin-only).
+ */
+export async function updateAdmin(
+  connection: Connection,
+  wallet: Keypair,
+  newAdmin: PublicKey,
+  options?: SkillOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  return program.methods
+    .updateAdmin(newAdmin)
+    .accounts({ admin: wallet.publicKey } as any)
+    .signers([wallet])
+    .rpc();
+}
+
+/**
+ * Update the fee recipient (admin-only).
+ */
+export async function updateFeeRecipient(
+  connection: Connection,
+  wallet: Keypair,
+  newRecipient: PublicKey,
+  options?: SkillOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  return program.methods
+    .updateFeeRecipient(newRecipient)
+    .accounts({ admin: wallet.publicKey } as any)
+    .signers([wallet])
+    .rpc();
+}
+
+/**
+ * Update the registration fee in lamports (admin-only).
+ */
+export async function updateRegisterFee(
+  connection: Connection,
+  wallet: Keypair,
+  newFee: number | anchor.BN,
+  options?: SkillOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  const fee = typeof newFee === "number" ? new anchor.BN(newFee) : newFee;
+  return program.methods
+    .updateRegisterFee(fee)
+    .accounts({ admin: wallet.publicKey } as any)
+    .signers([wallet])
+    .rpc();
 }

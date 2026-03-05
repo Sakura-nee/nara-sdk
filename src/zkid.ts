@@ -614,3 +614,45 @@ export async function transferZkIdByCommitment(
     .accounts({ payer: payer.publicKey } as any)
     .rpc();
 }
+
+// ─── Admin functions ──────────────────────────────────────────────────────────
+
+/**
+ * Initialize the program configuration (one-time setup).
+ * The caller becomes the admin.
+ */
+export async function initializeConfig(
+  connection: Connection,
+  wallet: Keypair,
+  feeRecipient: PublicKey,
+  feeAmount: BN | number,
+  options?: ZkIdOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  const fee = typeof feeAmount === "number" ? new BN(feeAmount) : feeAmount;
+  return program.methods
+    .initializeConfig(feeRecipient, fee)
+    .accounts({ admin: wallet.publicKey } as any)
+    .signers([wallet])
+    .rpc();
+}
+
+/**
+ * Update the program config: admin, fee recipient, and fee amount (admin-only).
+ */
+export async function updateConfig(
+  connection: Connection,
+  wallet: Keypair,
+  newAdmin: PublicKey,
+  newFeeRecipient: PublicKey,
+  newFeeAmount: BN | number,
+  options?: ZkIdOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  const fee = typeof newFeeAmount === "number" ? new BN(newFeeAmount) : newFeeAmount;
+  return program.methods
+    .updateConfig(newAdmin, newFeeRecipient, fee)
+    .accounts({ admin: wallet.publicKey } as any)
+    .signers([wallet])
+    .rpc();
+}
