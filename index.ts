@@ -24,6 +24,8 @@ export {
   submitAnswer,
   submitAnswerViaRelay,
   parseQuestReward,
+  computeAnswerHash,
+  createQuestion,
   type QuestInfo,
   type ZkProof,
   type ZkProofHex,

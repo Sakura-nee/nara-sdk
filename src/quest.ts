@@ -435,3 +435,52 @@ export async function parseQuestReward(
     winner,
   };
 }
+
+/**
+ * Compute the Poseidon answer hash for a given answer string.
+ * Uses answerToField (UTF-8 encoding) consistent with on-chain question creation.
+ */
+export async function computeAnswerHash(answer: string): Promise<number[]> {
+  const circomlibjs = await import("circomlibjs");
+  const poseidon = await circomlibjs.buildPoseidon();
+  const fieldVal = answerToField(answer);
+  const hashRaw = poseidon([fieldVal]);
+  const hashStr: string = poseidon.F.toString(hashRaw);
+  return Array.from(toBigEndian32(BigInt(hashStr)));
+}
+
+/**
+ * Create a new quest question on-chain (authority only).
+ *
+ * @param connection - Solana connection
+ * @param wallet - Authority keypair (must be the program authority)
+ * @param question - The question text
+ * @param answer - The answer string (will be hashed with Poseidon + answerToField)
+ * @param deadlineSeconds - Duration in seconds from now until the deadline
+ * @param rewardSol - Total reward amount in SOL/NARA
+ * @param difficulty - Difficulty level (default: 1)
+ * @param options - Optional program ID override
+ */
+export async function createQuestion(
+  connection: Connection,
+  wallet: Keypair,
+  question: string,
+  answer: string,
+  deadlineSeconds: number,
+  rewardSol: number,
+  difficulty: number = 1,
+  options?: QuestOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  const answerHash = await computeAnswerHash(answer);
+  const deadline = new anchor.BN(Math.floor(Date.now() / 1000) + deadlineSeconds);
+  const rewardAmount = new anchor.BN(Math.round(rewardSol * LAMPORTS_PER_SOL));
+
+  const signature = await program.methods
+    .createQuestion(question, answerHash as any, deadline, rewardAmount, difficulty)
+    .accounts({ authority: wallet.publicKey } as any)
+    .signers([wallet])
+    .rpc();
+
+  return signature;
+}
