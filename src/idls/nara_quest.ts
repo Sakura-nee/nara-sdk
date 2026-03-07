@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/nara_quest.json`.
  */
 export type NaraQuest = {
-  "address": "EXPLAHaMHLK9p7w5jVqEVY671NkkCKSHTNhhyUrPAboZ",
+  "address": "Quest11111111111111111111111111111111111111",
   "metadata": {
     "name": "naraQuest",
     "version": "0.1.0",
@@ -465,8 +465,8 @@ export type NaraQuest = {
     },
     {
       "code": 6001,
-      "name": "poolNotActive",
-      "msg": "Pool has no active question"
+      "name": "noActiveQuest",
+      "msg": "No active quest"
     },
     {
       "code": 6002,
@@ -490,16 +490,11 @@ export type NaraQuest = {
     },
     {
       "code": 6006,
-      "name": "insufficientPoolBalance",
-      "msg": "Pool balance insufficient for reward transfer"
-    },
-    {
-      "code": 6007,
       "name": "questionTooLong",
       "msg": "Question exceeds maximum length"
     },
     {
-      "code": 6008,
+      "code": 6007,
       "name": "alreadyAnswered",
       "msg": "Already answered this round"
     }
@@ -512,10 +507,6 @@ export type NaraQuest = {
         "fields": [
           {
             "name": "round",
-            "type": "u64"
-          },
-          {
-            "name": "questionId",
             "type": "u64"
           },
           {
@@ -551,10 +542,6 @@ export type NaraQuest = {
             "type": "pubkey"
           },
           {
-            "name": "nextQuestionId",
-            "type": "u64"
-          },
-          {
             "name": "padding",
             "type": {
               "array": [
@@ -573,10 +560,6 @@ export type NaraQuest = {
         "fields": [
           {
             "name": "round",
-            "type": "u64"
-          },
-          {
-            "name": "questionId",
             "type": "u64"
           },
           {
@@ -613,10 +596,6 @@ export type NaraQuest = {
             "type": "u32"
           },
           {
-            "name": "isActive",
-            "type": "bool"
-          },
-          {
             "name": "difficulty",
             "type": "u32"
           },
@@ -640,10 +619,6 @@ export type NaraQuest = {
           {
             "name": "round",
             "type": "u64"
-          },
-          {
-            "name": "rewarded",
-            "type": "bool"
           },
           {
             "name": "padding",

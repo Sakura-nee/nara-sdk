@@ -41,7 +41,6 @@ const DEFAULT_ZKEY = findZkFile("answer_proof_final.zkey");
 export interface QuestInfo {
   active: boolean;
   round: string;
-  questionId: string;
   question: string;
   answerHash: number[];
   rewardPerWinner: number;
@@ -224,10 +223,11 @@ export async function getQuestInfo(
   const deadline = pool.deadline.toNumber();
   const secsLeft = deadline - now;
 
+  const active = pool.question.length > 0 && secsLeft > 0;
+
   return {
-    active: pool.isActive,
+    active,
     round: pool.round.toString(),
-    questionId: pool.questionId.toString(),
     question: pool.question,
     answerHash: Array.from(pool.answerHash),
     rewardPerWinner: pool.rewardPerWinner.toNumber() / LAMPORTS_PER_SOL,

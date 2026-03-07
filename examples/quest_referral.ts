@@ -140,6 +140,9 @@ async function main() {
   const config = await getAgentRegistryConfig(connection);
   console.log(`  Points per activity (self): ${config.pointsSelf}`);
   console.log(`  Points per referral: ${config.pointsReferral}`);
+  console.log(`  Referral register fee: ${config.referralRegisterFee}`);
+  console.log(`  Referral fee share: ${config.referralFeeShare}`);
+  console.log(`  Referral register points: ${config.referralRegisterPoints}`);
 
   // ── 5. Fetch quest and answer with referral ────────────────────
   console.log("\n--- Fetching quest ---");
@@ -315,25 +318,16 @@ async function main() {
     );
   }
 
-  // ── 7. Verify agent points on-chain ────────────────────────────
-  console.log("\n--- Verifying on-chain agent points ---");
+  // ── 7. Verify agent records on-chain ───────────────────────────
+  // Note: Points are now minted as SPL tokens (Token-2022), not stored on AgentRecord.
+  // Check token balances via the point mint ATA if needed.
+  console.log("\n--- Verifying on-chain agent records ---");
   const mainRecord = await getAgentRecord(connection, mainAgentId);
-  console.log(`  Main agent points: ${mainRecord.points}`);
+  console.log(`  Main agent: ${mainRecord.agentId}, version: ${mainRecord.version}`);
+  console.log(`  Main agent referral: ${mainRecord.referralId ?? "(none)"}`);
 
   const referralRecord = await getAgentRecord(connection, referralAgentId);
-  console.log(`  Referral agent points: ${referralRecord.points}`);
-
-  if (mainRecord.points > 0) {
-    console.log("  OK: Main agent earned points");
-  } else {
-    console.log("  WARN: Main agent has 0 points");
-  }
-
-  if (referralRecord.points > 0) {
-    console.log("  OK: Referral agent earned points");
-  } else {
-    console.log("  WARN: Referral agent has 0 points");
-  }
+  console.log(`  Referral agent: ${referralRecord.agentId}, version: ${referralRecord.version}`);
 
   // ── Summary ────────────────────────────────────────────────────
   console.log(`\n${pass ? "ALL CHECKS PASSED" : "SOME CHECKS FAILED"}`);

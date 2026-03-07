@@ -147,27 +147,56 @@ function getMetaPda(programId: PublicKey, skillPubkey: PublicKey): PublicKey {
   return pda;
 }
 
-function mapSkillRecord(raw: any): SkillRecord {
-  // name/author are now fixed [u8; N] arrays with length prefixes (bytemuck)
-  const nameLen = raw.nameLen as number;
-  const nameBytes = raw.name as number[];
-  const name = Buffer.from(nameBytes.slice(0, nameLen)).toString("utf-8");
+/**
+ * Parse SkillRecord from raw account data (bytemuck zero-copy layout).
+ * Layout (after 8-byte discriminator):
+ *   32 authority | 32 content | 32 pending_buffer |
+ *   8 created_at | 8 updated_at | 4 version |
+ *   2 name_len | 2 author_len | 32 name | 64 author | 64 _reserved
+ */
+function parseSkillRecordData(data: Buffer | Uint8Array): SkillRecord {
+  const buf = Buffer.from(data);
+  let offset = 8; // skip discriminator
 
-  const authorLen = raw.authorLen as number;
-  const authorBytes = raw.author as number[];
-  const author = Buffer.from(authorBytes.slice(0, authorLen)).toString("utf-8");
+  const authority = new PublicKey(buf.subarray(offset, offset + 32)); offset += 32;
+  const content = new PublicKey(buf.subarray(offset, offset + 32)); offset += 32;
+  const pendingBuffer = new PublicKey(buf.subarray(offset, offset + 32)); offset += 32;
 
-  const pendingBuffer = raw.pendingBuffer as PublicKey;
+  const createdAt = Number(buf.readBigInt64LE(offset)); offset += 8;
+  const updatedAt = Number(buf.readBigInt64LE(offset)); offset += 8;
+  const version = buf.readUInt32LE(offset); offset += 4;
+
+  const nameLen = buf.readUInt16LE(offset); offset += 2;
+  const authorLen = buf.readUInt16LE(offset); offset += 2;
+  const name = buf.subarray(offset, offset + nameLen).toString("utf-8"); offset += 32;
+  const author = buf.subarray(offset, offset + authorLen).toString("utf-8");
+
   return {
-    authority: raw.authority as PublicKey,
+    authority,
     name,
     author,
     pendingBuffer: pendingBuffer.equals(PublicKey.default) ? null : pendingBuffer,
-    content: raw.content as PublicKey,
-    version: raw.version as number,
-    createdAt: (raw.createdAt as anchor.BN).toNumber(),
-    updatedAt: (raw.updatedAt as anchor.BN).toNumber(),
+    content,
+    version,
+    createdAt,
+    updatedAt,
   };
+}
+
+/**
+ * Fetch a SkillRecord by name using raw account data parsing.
+ */
+async function fetchSkillRecord(
+  connection: Connection,
+  name: string,
+  programId: PublicKey
+): Promise<SkillRecord> {
+  const skillPda = getSkillPda(programId, name);
+  const accountInfo = await connection.getAccountInfo(skillPda);
+  if (!accountInfo) {
+    throw new Error(`Skill "${name}" not found`);
+  }
+  return parseSkillRecordData(accountInfo.data);
 }
 
 // ─── SDK functions ───────────────────────────────────────────────
@@ -188,13 +217,17 @@ export async function registerSkill(
   }
   const program = createProgram(connection, wallet, options?.programId);
   const configPda = getConfigPda(program.programId);
-  const config = await program.account.programConfig.fetch(configPda);
+  const configInfo = await connection.getAccountInfo(configPda);
+  if (!configInfo) throw new Error("Skills program config not initialized");
+  const configBuf = Buffer.from(configInfo.data);
+  // ProgramConfig bytemuck: 8 disc + 32 admin + 8 register_fee + 32 fee_recipient
+  const feeRecipient = new PublicKey(configBuf.subarray(48, 80));
 
   const signature = await program.methods
     .registerSkill(name, author)
     .accounts({
       authority: wallet.publicKey,
-      feeRecipient: config.feeRecipient,
+      feeRecipient,
     } as any)
     .signers([wallet])
     .rpc();
@@ -211,10 +244,8 @@ export async function getSkillRecord(
   name: string,
   options?: SkillOptions
 ): Promise<SkillRecord> {
-  const program = createProgram(connection, Keypair.generate(), options?.programId);
-  const skillPda = getSkillPda(program.programId, name);
-  const raw = await program.account.skillRecord.fetch(skillPda);
-  return mapSkillRecord(raw);
+  const pid = new PublicKey(options?.programId ?? DEFAULT_SKILLS_PROGRAM_ID);
+  return fetchSkillRecord(connection, name, pid);
 }
 
 /**
@@ -225,31 +256,38 @@ export async function getSkillInfo(
   name: string,
   options?: SkillOptions
 ): Promise<SkillInfo> {
-  const program = createProgram(connection, Keypair.generate(), options?.programId);
-  const skillPda = getSkillPda(program.programId, name);
-  const raw = await program.account.skillRecord.fetch(skillPda);
-  const record = mapSkillRecord(raw);
+  const pid = new PublicKey(options?.programId ?? DEFAULT_SKILLS_PROGRAM_ID);
+  const skillPda = getSkillPda(pid, name);
+  const accountInfo = await connection.getAccountInfo(skillPda);
+  if (!accountInfo) {
+    throw new Error(`Skill "${name}" not found`);
+  }
+  const record = parseSkillRecordData(accountInfo.data);
 
-  const descPda = getDescPda(program.programId, skillPda);
-  const metaPda = getMetaPda(program.programId, skillPda);
+  const descPda = getDescPda(pid, skillPda);
+  const metaPda = getMetaPda(pid, skillPda);
 
   let description: string | null = null;
   let metadata: string | null = null;
 
   try {
-    const descAcc = await program.account.skillDescription.fetch(descPda);
-    const descLen = descAcc.descriptionLen as number;
-    const descBytes = descAcc.description as number[];
-    description = Buffer.from(descBytes.slice(0, descLen)).toString("utf-8");
+    const descInfo = await connection.getAccountInfo(descPda);
+    if (descInfo) {
+      const buf = Buffer.from(descInfo.data);
+      const descLen = buf.readUInt16LE(8);
+      description = buf.subarray(10, 10 + descLen).toString("utf-8");
+    }
   } catch {
     // account not created yet
   }
 
   try {
-    const metaAcc = await program.account.skillMetadata.fetch(metaPda);
-    const dataLen = metaAcc.dataLen as number;
-    const dataBytes = metaAcc.data as number[];
-    metadata = Buffer.from(dataBytes.slice(0, dataLen)).toString("utf-8");
+    const metaInfo = await connection.getAccountInfo(metaPda);
+    if (metaInfo) {
+      const buf = Buffer.from(metaInfo.data);
+      const dataLen = buf.readUInt16LE(8);
+      metadata = buf.subarray(10, 10 + dataLen).toString("utf-8");
+    }
   } catch {
     // account not created yet
   }
@@ -266,16 +304,14 @@ export async function getSkillContent(
   name: string,
   options?: SkillOptions
 ): Promise<Buffer | null> {
-  const program = createProgram(connection, Keypair.generate(), options?.programId);
-  const skillPda = getSkillPda(program.programId, name);
-  const raw = await program.account.skillRecord.fetch(skillPda);
-  const contentPubkey = raw.content as PublicKey;
+  const pid = new PublicKey(options?.programId ?? DEFAULT_SKILLS_PROGRAM_ID);
+  const record = await fetchSkillRecord(connection, name, pid);
 
-  if (contentPubkey.equals(PublicKey.default)) {
+  if (record.content.equals(PublicKey.default)) {
     return null;
   }
 
-  const accountInfo = await connection.getAccountInfo(contentPubkey);
+  const accountInfo = await connection.getAccountInfo(record.content);
   if (!accountInfo) return null;
 
   // Content bytes start after the header (8 discriminator + 32 skill pubkey)
@@ -346,15 +382,13 @@ export async function closeBuffer(
   options?: SkillOptions
 ): Promise<string> {
   const program = createProgram(connection, wallet, options?.programId);
-  const skillPda = getSkillPda(program.programId, name);
-  const raw = await program.account.skillRecord.fetch(skillPda);
-  const bufferPubkey = raw.pendingBuffer as PublicKey;
-  if (bufferPubkey.equals(PublicKey.default)) {
+  const record = await fetchSkillRecord(connection, name, program.programId);
+  if (!record.pendingBuffer) {
     throw new Error(`Skill "${name}" has no pending buffer`);
   }
   return program.methods
     .closeBuffer(name)
-    .accounts({ authority: wallet.publicKey, buffer: bufferPubkey } as any)
+    .accounts({ authority: wallet.publicKey, buffer: record.pendingBuffer } as any)
     .signers([wallet])
     .rpc();
 }
@@ -370,14 +404,12 @@ export async function deleteSkill(
   options?: SkillOptions
 ): Promise<string> {
   const program = createProgram(connection, wallet, options?.programId);
-  const skillPda = getSkillPda(program.programId, name);
-  const raw = await program.account.skillRecord.fetch(skillPda);
-  const contentPubkey = raw.content as PublicKey;
+  const record = await fetchSkillRecord(connection, name, program.programId);
 
   // When no content exists, pass the authority pubkey as a placeholder
-  const contentAccount = contentPubkey.equals(PublicKey.default)
+  const contentAccount = record.content.equals(PublicKey.default)
     ? wallet.publicKey
-    : contentPubkey;
+    : record.content;
 
   return program.methods
     .deleteSkill(name)
@@ -411,9 +443,8 @@ export async function uploadSkillContent(
   const program = createProgram(connection, wallet, options?.programId);
   const chunkSize = options?.chunkSize ?? DEFAULT_CHUNK_SIZE;
   const totalLen = content.length;
-  const skillPda = getSkillPda(program.programId, name);
-  const raw = await program.account.skillRecord.fetch(skillPda);
-  const existingContent = raw.content as PublicKey;
+  const record = await fetchSkillRecord(connection, name, program.programId);
+  const existingContent = record.content;
   const isUpdate = !existingContent.equals(PublicKey.default);
 
   // ── Step 1: create buffer account ────────────────────────────
@@ -500,6 +531,27 @@ export async function uploadSkillContent(
       .signers([wallet])
       .rpc();
   }
+}
+
+/**
+ * Fetch the global program configuration.
+ */
+export async function getConfig(
+  connection: Connection,
+  options?: SkillOptions
+): Promise<{ admin: PublicKey; registerFee: number; feeRecipient: PublicKey }> {
+  const pid = new PublicKey(options?.programId ?? DEFAULT_SKILLS_PROGRAM_ID);
+  const configPda = getConfigPda(pid);
+  const accountInfo = await connection.getAccountInfo(configPda);
+  if (!accountInfo) {
+    throw new Error("Skills program config not initialized");
+  }
+  const buf = Buffer.from(accountInfo.data);
+  let offset = 8; // skip discriminator
+  const admin = new PublicKey(buf.subarray(offset, offset + 32)); offset += 32;
+  const registerFee = Number(buf.readBigUInt64LE(offset)); offset += 8;
+  const feeRecipient = new PublicKey(buf.subarray(offset, offset + 32));
+  return { admin, registerFee, feeRecipient };
 }
 
 // ─── Admin functions ────────────────────────────────────────────

@@ -12,6 +12,7 @@ import {
 } from "@solana/web3.js";
 import * as anchor from "@coral-xyz/anchor";
 import { Program, AnchorProvider, Wallet } from "@coral-xyz/anchor";
+import { getAssociatedTokenAddressSync, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 import type { NaraAgentRegistry } from "./idls/nara_agent_registry";
 import { DEFAULT_AGENT_REGISTRY_PROGRAM_ID } from "./constants";
 
@@ -74,8 +75,8 @@ export interface AgentRecord {
   memory: PublicKey;
   /** 0 = no memory, increments on each upload */
   version: number;
-  /** Accumulated activity points */
-  points: number;
+  /** Referral agent ID, null if none */
+  referralId: string | null;
   createdAt: number;
   updatedAt: number;
 }
@@ -149,6 +150,45 @@ function getMetaPda(programId: PublicKey, agentPubkey: PublicKey): PublicKey {
   return pda;
 }
 
+function getPointMintPda(programId: PublicKey): PublicKey {
+  const [pda] = PublicKey.findProgramAddressSync(
+    [Buffer.from("point_mint")],
+    programId
+  );
+  return pda;
+}
+
+function getMintAuthorityPda(programId: PublicKey): PublicKey {
+  const [pda] = PublicKey.findProgramAddressSync(
+    [Buffer.from("mint_authority")],
+    programId
+  );
+  return pda;
+}
+
+/**
+ * Build referral-related accounts for register_agent / log_activity.
+ * Returns the referral agent PDA, its authority, and the authority's ATA for point_mint.
+ */
+async function resolveReferralAccounts(
+  connection: Connection,
+  referralAgentId: string,
+  programId: PublicKey,
+  pointMint: PublicKey
+): Promise<{ referralAgent: PublicKey; referralAuthority: PublicKey; referralPointAccount: PublicKey }> {
+  const referralAgent = getAgentPda(programId, referralAgentId);
+  const accountInfo = await connection.getAccountInfo(referralAgent);
+  if (!accountInfo) {
+    throw new Error(`Referral agent "${referralAgentId}" not found`);
+  }
+  // Authority is first 32 bytes after 8-byte discriminator
+  const referralAuthority = new PublicKey(accountInfo.data.subarray(8, 40));
+  const referralPointAccount = getAssociatedTokenAddressSync(
+    pointMint, referralAuthority, true, TOKEN_2022_PROGRAM_ID
+  );
+  return { referralAgent, referralAuthority, referralPointAccount };
+}
+
 /** Bio/Metadata header: 8-byte discriminator + 64-byte _reserved */
 const BIO_META_HEADER_SIZE = 72;
 
@@ -156,8 +196,9 @@ const BIO_META_HEADER_SIZE = 72;
  * Parse AgentRecord from raw account data (bytemuck zero-copy layout).
  * Layout (after 8-byte discriminator):
  *   32 authority | 32 pending_buffer | 32 memory |
- *   8 created_at | 8 updated_at | 8 points |
- *   4 version | 4 agent_id_len | 32 agent_id | 64 _reserved
+ *   8 created_at | 8 updated_at |
+ *   4 version | 4 agent_id_len | 32 agent_id |
+ *   4 referral_id_len | 32 referral_id | 4 _padding | 64 _reserved
  */
 function parseAgentRecordData(data: Buffer | Uint8Array): AgentRecord {
   const buf = Buffer.from(data);
@@ -169,11 +210,15 @@ function parseAgentRecordData(data: Buffer | Uint8Array): AgentRecord {
 
   const createdAt = Number(buf.readBigInt64LE(offset)); offset += 8;
   const updatedAt = Number(buf.readBigInt64LE(offset)); offset += 8;
-  const points = Number(buf.readBigUInt64LE(offset)); offset += 8;
 
   const version = buf.readUInt32LE(offset); offset += 4;
   const agentIdLen = buf.readUInt32LE(offset); offset += 4;
-  const agentId = buf.subarray(offset, offset + agentIdLen).toString("utf-8");
+  const agentId = buf.subarray(offset, offset + agentIdLen).toString("utf-8"); offset += 32;
+
+  const referralIdLen = buf.readUInt32LE(offset); offset += 4;
+  const referralId = referralIdLen > 0
+    ? buf.subarray(offset, offset + referralIdLen).toString("utf-8")
+    : null;
 
   return {
     authority,
@@ -181,7 +226,7 @@ function parseAgentRecordData(data: Buffer | Uint8Array): AgentRecord {
     pendingBuffer: pendingBuffer.equals(PublicKey.default) ? null : pendingBuffer,
     memory,
     version,
-    points,
+    referralId,
     createdAt,
     updatedAt,
   };
@@ -285,10 +330,14 @@ export async function getConfig(
   options?: AgentRegistryOptions
 ): Promise<{
   admin: PublicKey;
-  registerFee: number;
   feeRecipient: PublicKey;
+  pointMint: PublicKey;
+  registerFee: number;
   pointsSelf: number;
   pointsReferral: number;
+  referralRegisterFee: number;
+  referralFeeShare: number;
+  referralRegisterPoints: number;
 }> {
   const pid = new PublicKey(options?.programId ?? DEFAULT_AGENT_REGISTRY_PROGRAM_ID);
   const configPda = getConfigPda(pid);
@@ -300,10 +349,14 @@ export async function getConfig(
   let offset = 8; // skip discriminator
   const admin = new PublicKey(buf.subarray(offset, offset + 32)); offset += 32;
   const feeRecipient = new PublicKey(buf.subarray(offset, offset + 32)); offset += 32;
+  const pointMint = new PublicKey(buf.subarray(offset, offset + 32)); offset += 32;
   const registerFee = Number(buf.readBigUInt64LE(offset)); offset += 8;
   const pointsSelf = Number(buf.readBigUInt64LE(offset)); offset += 8;
-  const pointsReferral = Number(buf.readBigUInt64LE(offset));
-  return { admin, registerFee, feeRecipient, pointsSelf, pointsReferral };
+  const pointsReferral = Number(buf.readBigUInt64LE(offset)); offset += 8;
+  const referralRegisterFee = Number(buf.readBigUInt64LE(offset)); offset += 8;
+  const referralFeeShare = Number(buf.readBigUInt64LE(offset)); offset += 8;
+  const referralRegisterPoints = Number(buf.readBigUInt64LE(offset));
+  return { admin, feeRecipient, pointMint, registerFee, pointsSelf, pointsReferral, referralRegisterFee, referralFeeShare, referralRegisterPoints };
 }
 
 // ─── Agent CRUD ─────────────────────────────────────────────────
@@ -315,20 +368,35 @@ export async function registerAgent(
   connection: Connection,
   wallet: Keypair,
   agentId: string,
-  options?: AgentRegistryOptions
+  options?: AgentRegistryOptions,
+  referralAgentId?: string
 ): Promise<{ signature: string; agentPubkey: PublicKey }> {
   if (/[A-Z]/.test(agentId)) {
     throw new Error(`Agent ID must not contain uppercase letters: "${agentId}"`);
   }
   const program = createProgram(connection, wallet, options?.programId);
-  const configPda = getConfigPda(program.programId);
-  const config = await program.account.programConfig.fetch(configPda);
+  const config = await getConfig(connection, options);
+  const pointMint = getPointMintPda(program.programId);
+
+  let referralAccounts: {
+    referralAgent: PublicKey | null;
+    referralAuthority: PublicKey | null;
+    referralPointAccount: PublicKey | null;
+  } = { referralAgent: null, referralAuthority: null, referralPointAccount: null };
+
+  if (referralAgentId) {
+    const resolved = await resolveReferralAccounts(
+      connection, referralAgentId, program.programId, pointMint
+    );
+    referralAccounts = resolved;
+  }
 
   const signature = await program.methods
     .registerAgent(agentId)
     .accounts({
       authority: wallet.publicKey,
       feeRecipient: config.feeRecipient,
+      ...referralAccounts,
     } as any)
     .signers([wallet])
     .rpc();
@@ -599,14 +667,31 @@ export async function logActivity(
   referralAgentId?: string
 ): Promise<string> {
   const program = createProgram(connection, wallet, options?.programId);
+  const pointMint = getPointMintPda(program.programId);
+  const authorityPointAccount = getAssociatedTokenAddressSync(
+    pointMint, wallet.publicKey, true, TOKEN_2022_PROGRAM_ID
+  );
+
+  let referralAccounts: {
+    referralAgent: PublicKey | null;
+    referralAuthority: PublicKey | null;
+    referralPointAccount: PublicKey | null;
+  } = { referralAgent: null, referralAuthority: null, referralPointAccount: null };
+
+  if (referralAgentId) {
+    const resolved = await resolveReferralAccounts(
+      connection, referralAgentId, program.programId, pointMint
+    );
+    referralAccounts = resolved;
+  }
+
   return program.methods
     .logActivity(agentId, model, activity, log)
     .accounts({
       authority: wallet.publicKey,
+      authorityPointAccount,
       instructions: SYSVAR_INSTRUCTIONS_PUBKEY,
-      referralAgent: referralAgentId
-        ? getAgentPda(program.programId, referralAgentId)
-        : null,
+      ...referralAccounts,
     } as any)
     .signers([wallet])
     .rpc();
@@ -629,16 +714,58 @@ export async function makeLogActivityIx(
   referralAgentId?: string
 ): Promise<TransactionInstruction> {
   const program = createProgram(connection, Keypair.generate(), options?.programId);
+  const pointMint = getPointMintPda(program.programId);
+  const authorityPointAccount = getAssociatedTokenAddressSync(
+    pointMint, authority, true, TOKEN_2022_PROGRAM_ID
+  );
+
+  let referralAccounts: {
+    referralAgent: PublicKey | null;
+    referralAuthority: PublicKey | null;
+    referralPointAccount: PublicKey | null;
+  } = { referralAgent: null, referralAuthority: null, referralPointAccount: null };
+
+  if (referralAgentId) {
+    const resolved = await resolveReferralAccounts(
+      connection, referralAgentId, program.programId, pointMint
+    );
+    referralAccounts = resolved;
+  }
+
   return program.methods
     .logActivity(agentId, model, activity, log)
     .accounts({
       authority,
+      authorityPointAccount,
       instructions: SYSVAR_INSTRUCTIONS_PUBKEY,
-      referralAgent: referralAgentId
-        ? getAgentPda(program.programId, referralAgentId)
-        : null,
+      ...referralAccounts,
     } as any)
     .instruction();
+}
+
+// ─── Referral ────────────────────────────────────────────────────
+
+/**
+ * Set a referral agent for the given agent. Can only be set once.
+ * The referral agent must exist and cannot be the agent itself.
+ */
+export async function setReferral(
+  connection: Connection,
+  wallet: Keypair,
+  agentId: string,
+  referralAgentId: string,
+  options?: AgentRegistryOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  const referralAgent = getAgentPda(program.programId, referralAgentId);
+  return program.methods
+    .setReferral(agentId)
+    .accounts({
+      authority: wallet.publicKey,
+      referralAgent,
+    } as any)
+    .signers([wallet])
+    .rpc();
 }
 
 // ─── Admin functions ────────────────────────────────────────────
@@ -728,6 +855,31 @@ export async function updatePointsConfig(
   const pr = typeof pointsReferral === "number" ? new anchor.BN(pointsReferral) : pointsReferral;
   return program.methods
     .updatePointsConfig(ps, pr)
+    .accounts({ admin: wallet.publicKey } as any)
+    .signers([wallet])
+    .rpc();
+}
+
+/**
+ * Update the referral configuration (admin-only).
+ * @param referralRegisterFee - Fee charged on referral registrations (lamports)
+ * @param referralFeeShare - Share of registration fee given to referrer (lamports, must <= referralRegisterFee)
+ * @param referralRegisterPoints - Points awarded to referrer on registration
+ */
+export async function updateReferralConfig(
+  connection: Connection,
+  wallet: Keypair,
+  referralRegisterFee: number | anchor.BN,
+  referralFeeShare: number | anchor.BN,
+  referralRegisterPoints: number | anchor.BN,
+  options?: AgentRegistryOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  const fee = typeof referralRegisterFee === "number" ? new anchor.BN(referralRegisterFee) : referralRegisterFee;
+  const share = typeof referralFeeShare === "number" ? new anchor.BN(referralFeeShare) : referralFeeShare;
+  const pts = typeof referralRegisterPoints === "number" ? new anchor.BN(referralRegisterPoints) : referralRegisterPoints;
+  return program.methods
+    .updateReferralConfig(fee, share, pts)
     .accounts({ admin: wallet.publicKey } as any)
     .signers([wallet])
     .rpc();

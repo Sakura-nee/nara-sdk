@@ -2,7 +2,8 @@
  * Example: Agent Registry (on-chain AI agent registration)
  *
  * This example demonstrates how to:
- * 1. Register a new agent
+ * 0. Register a referral agent
+ * 1. Register agent with referral (on registration)
  * 2. Set bio and metadata
  * 3. Upload agent memory (chunked buffer mechanism)
  * 4. Query agent info and read memory
@@ -11,8 +12,8 @@
  * 7. Update memory (replace)
  * 8. Append memory
  * 9. Log activity
- * 9b. Log activity with referral (verify event)
- * 10. Query config (pointsSelf, pointsReferral)
+ * 9b. setReferral (post-registration) + log activity with referral (verify event)
+ * 10. Query config (points, referral config)
  * 11. Transfer authority (optional)
  * 12. Delete agent (optional)
  *
@@ -32,6 +33,7 @@ import {
   setMetadata,
   uploadMemory,
   logActivity,
+  setReferral,
   transferAgentAuthority,
   deleteAgent,
   Keypair,
@@ -64,19 +66,35 @@ async function main() {
   const suffix = Math.random().toString(16).slice(2, 8);
   const agentId = process.env.AGENT_ID || `agent-${suffix}`;
 
-  // ── 1. Register agent ───────────────────────────────────────────
-  console.log(`\n--- Registering agent "${agentId}" ---`);
+  // ── 0. Register referral agent first ────────────────────────────
+  const referralAgentId = `ref-${suffix}`;
+  console.log(`\n--- Registering referral agent "${referralAgentId}" ---`);
+  try {
+    const { signature } = await registerAgent(connection, wallet, referralAgentId);
+    console.log("Registered, tx:", signature);
+  } catch (err: any) {
+    console.log("Register skipped:", err.message.slice(0, 80));
+  }
+
+  // ── 1. Register agent (with referral) ─────────────────────────
+  console.log(`\n--- Registering agent "${agentId}" with referral "${referralAgentId}" ---`);
   try {
     const { signature, agentPubkey } = await registerAgent(
       connection,
       wallet,
-      agentId
+      agentId,
+      undefined,
+      referralAgentId
     );
     console.log("Registered:", agentPubkey.toBase58());
     console.log("Transaction:", signature);
   } catch (err: any) {
     console.log("Register skipped (may already exist):", err.message);
   }
+
+  // Verify referralId was set on registration
+  const regRecord = await getAgentRecord(connection, agentId);
+  console.log("Referral after registration:", regRecord.referralId ?? "(none)");
 
   // ── 2. Set bio ────────────────────────────────────────────────
   console.log("\n--- Setting bio ---");
@@ -136,6 +154,7 @@ async function main() {
       ? new Date(info.record.updatedAt * 1000).toISOString()
       : "-"
   );
+  console.log("Referral:", info.record.referralId ?? "(none)");
   console.log("Bio:", info.bio ?? "(none)");
   console.log("Metadata:", info.metadata ?? "(none)");
 
@@ -236,18 +255,33 @@ async function main() {
   );
   console.log("Transaction:", actSig);
 
-  // ── 9b. Log activity with referral ─────────────────────────────
-  console.log("\n--- Logging activity with referral ---");
+  // ── 9b. setReferral + log activity with referral ──────────────
+  console.log("\n--- Testing setReferral ---");
 
-  // Register a second agent as referral
-  const referralAgentId = `ref-${suffix}`;
-  console.log(`Registering referral agent "${referralAgentId}"...`);
+  // Register a third agent to demonstrate setReferral (post-registration)
+  const agent3Id = `agent3-${suffix}`;
+  console.log(`Registering agent "${agent3Id}" without referral...`);
   try {
-    const { signature } = await registerAgent(connection, wallet, referralAgentId);
+    const { signature } = await registerAgent(connection, wallet, agent3Id);
     console.log("Registered, tx:", signature);
   } catch (err: any) {
     console.log("Register skipped:", err.message.slice(0, 80));
   }
+
+  // Now set referral after registration via setReferral
+  console.log(`Setting referral "${referralAgentId}" on agent "${agent3Id}"...`);
+  try {
+    const setRefSig = await setReferral(connection, wallet, agent3Id, referralAgentId);
+    console.log("Set referral tx:", setRefSig);
+  } catch (err: any) {
+    console.log("Set referral skipped:", err.message.slice(0, 80));
+  }
+
+  // Verify referral was set
+  const agent3Record = await getAgentRecord(connection, agent3Id);
+  console.log(`Agent "${agent3Id}" referral: ${agent3Record.referralId ?? "(none)"}`);
+
+  console.log("\n--- Logging activity with referral ---");
 
   const refActSig = await logActivity(
     connection,
@@ -318,9 +352,13 @@ async function main() {
   const config = await getAgentRegistryConfig(connection);
   console.log("  Admin:", config.admin.toBase58());
   console.log("  Fee recipient:", config.feeRecipient.toBase58());
+  console.log("  Point mint:", config.pointMint.toBase58());
   console.log("  Register fee:", config.registerFee);
   console.log("  Points per activity (self):", config.pointsSelf);
   console.log("  Points per referral:", config.pointsReferral);
+  console.log("  Referral register fee:", config.referralRegisterFee);
+  console.log("  Referral fee share:", config.referralFeeShare);
+  console.log("  Referral register points:", config.referralRegisterPoints);
 
   // ── 11. Transfer authority (optional) ────────────────────────
   // Uncomment and set NEW_AUTHORITY to transfer ownership.

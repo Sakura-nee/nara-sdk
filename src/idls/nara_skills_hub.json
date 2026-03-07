@@ -50,10 +50,6 @@
         {
           "name": "buffer",
           "writable": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -160,10 +156,6 @@
             "Pass any account (e.g. authority) when skill has no content."
           ],
           "writable": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -223,10 +215,6 @@
             "space = SkillContent::required_size(total_len))."
           ],
           "writable": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -290,10 +278,6 @@
         {
           "name": "old_content",
           "writable": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -993,56 +977,66 @@
     },
     {
       "code": 6009,
-      "name": "InvalidBufferOwner",
-      "msg": "Buffer account must be owned by this program"
-    },
-    {
-      "code": 6010,
       "name": "BufferMismatch",
       "msg": "Buffer account does not match skill.pending_buffer"
     },
     {
-      "code": 6011,
+      "code": 6010,
       "name": "InvalidContentOwner",
       "msg": "Content account must be owned by this program"
     },
     {
-      "code": 6012,
+      "code": 6011,
       "name": "InvalidContentSize",
       "msg": "Content account size does not match buffer total_len"
     },
     {
-      "code": 6013,
+      "code": 6012,
       "name": "ContentMismatch",
       "msg": "old_content account does not match skill.content"
     },
     {
-      "code": 6014,
+      "code": 6013,
       "name": "ContentAlreadyExists",
       "msg": "Skill already has content; use finalize_skill_update instead"
     },
     {
-      "code": 6015,
+      "code": 6014,
       "name": "ContentNotFound",
       "msg": "Skill has no existing content; use finalize_skill_new instead"
     },
     {
-      "code": 6016,
+      "code": 6015,
       "name": "HasPendingBuffer",
       "msg": "Cannot perform this operation while a pending buffer exists"
     },
     {
-      "code": 6017,
+      "code": 6016,
       "name": "InvalidFeeRecipient",
       "msg": "Fee recipient does not match config.fee_recipient"
     },
     {
-      "code": 6018,
+      "code": 6017,
       "name": "AuthorTooLong",
       "msg": "Author name too long: max 64 bytes"
     },
     {
+      "code": 6018,
+      "name": "NameNotLowercase",
+      "msg": "Name must be lowercase: uppercase letters are not allowed"
+    },
+    {
       "code": 6019,
+      "name": "ContentAlreadyInitialized",
+      "msg": "new_content account is already initialized"
+    },
+    {
+      "code": 6020,
+      "name": "ContentSelfReference",
+      "msg": "new_content must differ from old_content"
+    },
+    {
+      "code": 6021,
       "name": "MetadataTooLong",
       "msg": "Metadata too long: max 800 bytes"
     }

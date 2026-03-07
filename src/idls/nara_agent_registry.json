@@ -53,10 +53,6 @@
         {
           "name": "buffer",
           "writable": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -153,10 +149,6 @@
         {
           "name": "memory_account",
           "writable": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -279,10 +271,6 @@
         {
           "name": "new_memory",
           "writable": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -346,10 +334,6 @@
         {
           "name": "old_memory",
           "writable": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -455,6 +439,59 @@
           }
         },
         {
+          "name": "point_mint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  105,
+                  110,
+                  116,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
@@ -484,7 +521,6 @@
         },
         {
           "name": "agent",
-          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -523,16 +559,143 @@
           }
         },
         {
+          "name": "point_mint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  105,
+                  110,
+                  116,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority_point_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "point_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
           "name": "referral_agent",
           "docs": [
             "Optional referral agent PDA. Pass null if no referral."
           ],
+          "optional": true
+        },
+        {
+          "name": "referral_authority",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "referral_point_account",
           "writable": true,
           "optional": true
         },
         {
           "name": "instructions",
           "address": "Sysvar1nstructions1111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -615,6 +778,80 @@
         {
           "name": "fee_recipient",
           "writable": true
+        },
+        {
+          "name": "point_mint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  105,
+                  110,
+                  116,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "referral_agent",
+          "docs": [
+            "Optional referral agent PDA. Pass null if no referral."
+          ],
+          "optional": true
+        },
+        {
+          "name": "referral_authority",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "referral_point_account",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         },
         {
           "name": "system_program",
@@ -781,6 +1018,59 @@
         },
         {
           "name": "data",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "set_referral",
+      "discriminator": [
+        213,
+        23,
+        157,
+        74,
+        199,
+        152,
+        182,
+        8
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "agent"
+          ]
+        },
+        {
+          "name": "agent",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "agent_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "referral_agent"
+        }
+      ],
+      "args": [
+        {
+          "name": "agent_id",
           "type": "string"
         }
       ]
@@ -985,6 +1275,61 @@
       ]
     },
     {
+      "name": "update_referral_config",
+      "discriminator": [
+        129,
+        209,
+        121,
+        34,
+        163,
+        184,
+        187,
+        56
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "referral_register_fee",
+          "type": "u64"
+        },
+        {
+          "name": "referral_fee_share",
+          "type": "u64"
+        },
+        {
+          "name": "referral_register_points",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "update_register_fee",
       "discriminator": [
         16,
@@ -1095,16 +1440,16 @@
   ],
   "accounts": [
     {
-      "name": "AgentRecord",
+      "name": "AgentState",
       "discriminator": [
-        4,
-        201,
-        129,
-        70,
-        197,
-        134,
+        254,
+        187,
+        98,
+        119,
+        228,
+        48,
         47,
-        169
+        49
       ]
     },
     {
@@ -1249,6 +1594,51 @@
       "code": 6019,
       "name": "ReferralNotFound",
       "msg": "Referral agent not found"
+    },
+    {
+      "code": 6020,
+      "name": "InvalidReferralAuthority",
+      "msg": "Referral authority does not match referral agent's authority"
+    },
+    {
+      "code": 6021,
+      "name": "MemoryAlreadyInitialized",
+      "msg": "Memory account is already initialized"
+    },
+    {
+      "code": 6022,
+      "name": "InvalidReferralFeeConfig",
+      "msg": "referral_fee_share must not exceed referral_register_fee"
+    },
+    {
+      "code": 6023,
+      "name": "InvalidReferralPointAccount",
+      "msg": "referral_point_account is not the correct ATA"
+    },
+    {
+      "code": 6024,
+      "name": "CpiNotAllowed",
+      "msg": "log_activity cannot be called via CPI"
+    },
+    {
+      "code": 6025,
+      "name": "DuplicateLogActivity",
+      "msg": "Only one log_activity allowed per transaction"
+    },
+    {
+      "code": 6026,
+      "name": "QuestUserMismatch",
+      "msg": "Quest user does not match log_activity authority"
+    },
+    {
+      "code": 6027,
+      "name": "ReferralAlreadySet",
+      "msg": "Referral is already set and cannot be changed"
+    },
+    {
+      "code": 6028,
+      "name": "SelfReferral",
+      "msg": "Cannot set self as referral"
     }
   ],
   "types": [
@@ -1297,9 +1687,9 @@
       }
     },
     {
-      "name": "AgentRecord",
+      "name": "AgentState",
       "docs": [
-        "PDA metadata account for an agent, seeds = [b\"agent\", agent_id.as_bytes()]."
+        "PDA metadata account for an agent, seeds = [SEED_AGENT, agent_id.as_bytes()]."
       ],
       "serialization": "bytemuck",
       "repr": {
@@ -1329,10 +1719,6 @@
             "type": "i64"
           },
           {
-            "name": "points",
-            "type": "u64"
-          },
-          {
             "name": "version",
             "type": "u32"
           },
@@ -1348,6 +1734,23 @@
                 32
               ]
             }
+          },
+          {
+            "name": "referral_id_len",
+            "type": "u32"
+          },
+          {
+            "name": "referral_id",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "_padding",
+            "type": "u32"
           },
           {
             "name": "_reserved",
@@ -1405,7 +1808,7 @@
     {
       "name": "ProgramConfig",
       "docs": [
-        "Global program configuration. Single PDA, seeds = [b\"config\"].",
+        "Global program configuration. Single PDA, seeds = [SEED_CONFIG].",
         "Created once by the first caller of `init_config`; that caller becomes admin."
       ],
       "serialization": "bytemuck",
@@ -1424,6 +1827,10 @@
             "type": "pubkey"
           },
           {
+            "name": "point_mint",
+            "type": "pubkey"
+          },
+          {
             "name": "register_fee",
             "type": "u64"
           },
@@ -1433,6 +1840,18 @@
           },
           {
             "name": "points_referral",
+            "type": "u64"
+          },
+          {
+            "name": "referral_register_fee",
+            "type": "u64"
+          },
+          {
+            "name": "referral_fee_share",
+            "type": "u64"
+          },
+          {
+            "name": "referral_register_points",
             "type": "u64"
           },
           {

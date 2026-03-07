@@ -59,10 +59,6 @@ export type NaraAgentRegistry = {
         {
           "name": "buffer",
           "writable": true
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -159,10 +155,6 @@ export type NaraAgentRegistry = {
         {
           "name": "memoryAccount",
           "writable": true
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -285,10 +277,6 @@ export type NaraAgentRegistry = {
         {
           "name": "newMemory",
           "writable": true
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -352,10 +340,6 @@ export type NaraAgentRegistry = {
         {
           "name": "oldMemory",
           "writable": true
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -461,6 +445,59 @@ export type NaraAgentRegistry = {
           }
         },
         {
+          "name": "pointMint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  105,
+                  110,
+                  116,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "mintAuthority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
           "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
@@ -490,7 +527,6 @@ export type NaraAgentRegistry = {
         },
         {
           "name": "agent",
-          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -529,16 +565,143 @@ export type NaraAgentRegistry = {
           }
         },
         {
+          "name": "pointMint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  105,
+                  110,
+                  116,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "mintAuthority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authorityPointAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "account",
+                "path": "tokenProgram"
+              },
+              {
+                "kind": "account",
+                "path": "pointMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
           "name": "referralAgent",
           "docs": [
             "Optional referral agent PDA. Pass null if no referral."
           ],
+          "optional": true
+        },
+        {
+          "name": "referralAuthority",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "referralPointAccount",
           "writable": true,
           "optional": true
         },
         {
           "name": "instructions",
           "address": "Sysvar1nstructions1111111111111111111111111"
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -621,6 +784,80 @@ export type NaraAgentRegistry = {
         {
           "name": "feeRecipient",
           "writable": true
+        },
+        {
+          "name": "pointMint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  105,
+                  110,
+                  116,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "mintAuthority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "referralAgent",
+          "docs": [
+            "Optional referral agent PDA. Pass null if no referral."
+          ],
+          "optional": true
+        },
+        {
+          "name": "referralAuthority",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "referralPointAccount",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         },
         {
           "name": "systemProgram",
@@ -787,6 +1024,59 @@ export type NaraAgentRegistry = {
         },
         {
           "name": "data",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "setReferral",
+      "discriminator": [
+        213,
+        23,
+        157,
+        74,
+        199,
+        152,
+        182,
+        8
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "agent"
+          ]
+        },
+        {
+          "name": "agent",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "agentId"
+              }
+            ]
+          }
+        },
+        {
+          "name": "referralAgent"
+        }
+      ],
+      "args": [
+        {
+          "name": "agentId",
           "type": "string"
         }
       ]
@@ -991,6 +1281,61 @@ export type NaraAgentRegistry = {
       ]
     },
     {
+      "name": "updateReferralConfig",
+      "discriminator": [
+        129,
+        209,
+        121,
+        34,
+        163,
+        184,
+        187,
+        56
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "referralRegisterFee",
+          "type": "u64"
+        },
+        {
+          "name": "referralFeeShare",
+          "type": "u64"
+        },
+        {
+          "name": "referralRegisterPoints",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "updateRegisterFee",
       "discriminator": [
         16,
@@ -1101,16 +1446,16 @@ export type NaraAgentRegistry = {
   ],
   "accounts": [
     {
-      "name": "agentRecord",
+      "name": "agentState",
       "discriminator": [
-        4,
-        201,
-        129,
-        70,
-        197,
-        134,
+        254,
+        187,
+        98,
+        119,
+        228,
+        48,
         47,
-        169
+        49
       ]
     },
     {
@@ -1255,6 +1600,51 @@ export type NaraAgentRegistry = {
       "code": 6019,
       "name": "referralNotFound",
       "msg": "Referral agent not found"
+    },
+    {
+      "code": 6020,
+      "name": "invalidReferralAuthority",
+      "msg": "Referral authority does not match referral agent's authority"
+    },
+    {
+      "code": 6021,
+      "name": "memoryAlreadyInitialized",
+      "msg": "Memory account is already initialized"
+    },
+    {
+      "code": 6022,
+      "name": "invalidReferralFeeConfig",
+      "msg": "referral_fee_share must not exceed referral_register_fee"
+    },
+    {
+      "code": 6023,
+      "name": "invalidReferralPointAccount",
+      "msg": "referral_point_account is not the correct ATA"
+    },
+    {
+      "code": 6024,
+      "name": "cpiNotAllowed",
+      "msg": "log_activity cannot be called via CPI"
+    },
+    {
+      "code": 6025,
+      "name": "duplicateLogActivity",
+      "msg": "Only one log_activity allowed per transaction"
+    },
+    {
+      "code": 6026,
+      "name": "questUserMismatch",
+      "msg": "Quest user does not match log_activity authority"
+    },
+    {
+      "code": 6027,
+      "name": "referralAlreadySet",
+      "msg": "Referral is already set and cannot be changed"
+    },
+    {
+      "code": 6028,
+      "name": "selfReferral",
+      "msg": "Cannot set self as referral"
     }
   ],
   "types": [
@@ -1303,9 +1693,9 @@ export type NaraAgentRegistry = {
       }
     },
     {
-      "name": "agentRecord",
+      "name": "agentState",
       "docs": [
-        "PDA metadata account for an agent, seeds = [b\"agent\", agent_id.as_bytes()]."
+        "PDA metadata account for an agent, seeds = [SEED_AGENT, agent_id.as_bytes()]."
       ],
       "serialization": "bytemuck",
       "repr": {
@@ -1335,10 +1725,6 @@ export type NaraAgentRegistry = {
             "type": "i64"
           },
           {
-            "name": "points",
-            "type": "u64"
-          },
-          {
             "name": "version",
             "type": "u32"
           },
@@ -1354,6 +1740,23 @@ export type NaraAgentRegistry = {
                 32
               ]
             }
+          },
+          {
+            "name": "referralIdLen",
+            "type": "u32"
+          },
+          {
+            "name": "referralId",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "padding",
+            "type": "u32"
           },
           {
             "name": "reserved",
@@ -1411,7 +1814,7 @@ export type NaraAgentRegistry = {
     {
       "name": "programConfig",
       "docs": [
-        "Global program configuration. Single PDA, seeds = [b\"config\"].",
+        "Global program configuration. Single PDA, seeds = [SEED_CONFIG].",
         "Created once by the first caller of `init_config`; that caller becomes admin."
       ],
       "serialization": "bytemuck",
@@ -1430,6 +1833,10 @@ export type NaraAgentRegistry = {
             "type": "pubkey"
           },
           {
+            "name": "pointMint",
+            "type": "pubkey"
+          },
+          {
             "name": "registerFee",
             "type": "u64"
           },
@@ -1439,6 +1846,18 @@ export type NaraAgentRegistry = {
           },
           {
             "name": "pointsReferral",
+            "type": "u64"
+          },
+          {
+            "name": "referralRegisterFee",
+            "type": "u64"
+          },
+          {
+            "name": "referralFeeShare",
+            "type": "u64"
+          },
+          {
+            "name": "referralRegisterPoints",
             "type": "u64"
           },
           {

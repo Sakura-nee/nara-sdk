@@ -56,10 +56,6 @@ export type NaraSkillsHub = {
         {
           "name": "buffer",
           "writable": true
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -166,10 +162,6 @@ export type NaraSkillsHub = {
             "Pass any account (e.g. authority) when skill has no content."
           ],
           "writable": true
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -229,10 +221,6 @@ export type NaraSkillsHub = {
             "space = SkillContent::required_size(total_len))."
           ],
           "writable": true
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -296,10 +284,6 @@ export type NaraSkillsHub = {
         {
           "name": "oldContent",
           "writable": true
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -970,7 +954,7 @@ export type NaraSkillsHub = {
     {
       "code": 6003,
       "name": "unauthorized",
-      "msg": "unauthorized"
+      "msg": "Unauthorized"
     },
     {
       "code": 6004,
@@ -999,56 +983,66 @@ export type NaraSkillsHub = {
     },
     {
       "code": 6009,
-      "name": "invalidBufferOwner",
-      "msg": "Buffer account must be owned by this program"
-    },
-    {
-      "code": 6010,
       "name": "bufferMismatch",
       "msg": "Buffer account does not match skill.pending_buffer"
     },
     {
-      "code": 6011,
+      "code": 6010,
       "name": "invalidContentOwner",
       "msg": "Content account must be owned by this program"
     },
     {
-      "code": 6012,
+      "code": 6011,
       "name": "invalidContentSize",
       "msg": "Content account size does not match buffer total_len"
     },
     {
-      "code": 6013,
+      "code": 6012,
       "name": "contentMismatch",
       "msg": "old_content account does not match skill.content"
     },
     {
-      "code": 6014,
+      "code": 6013,
       "name": "contentAlreadyExists",
       "msg": "Skill already has content; use finalize_skill_update instead"
     },
     {
-      "code": 6015,
+      "code": 6014,
       "name": "contentNotFound",
       "msg": "Skill has no existing content; use finalize_skill_new instead"
     },
     {
-      "code": 6016,
+      "code": 6015,
       "name": "hasPendingBuffer",
       "msg": "Cannot perform this operation while a pending buffer exists"
     },
     {
-      "code": 6017,
+      "code": 6016,
       "name": "invalidFeeRecipient",
       "msg": "Fee recipient does not match config.fee_recipient"
     },
     {
-      "code": 6018,
+      "code": 6017,
       "name": "authorTooLong",
       "msg": "Author name too long: max 64 bytes"
     },
     {
+      "code": 6018,
+      "name": "nameNotLowercase",
+      "msg": "Name must be lowercase: uppercase letters are not allowed"
+    },
+    {
       "code": 6019,
+      "name": "contentAlreadyInitialized",
+      "msg": "new_content account is already initialized"
+    },
+    {
+      "code": 6020,
+      "name": "contentSelfReference",
+      "msg": "new_content must differ from old_content"
+    },
+    {
+      "code": 6021,
       "name": "metadataTooLong",
       "msg": "Metadata too long: max 800 bytes"
     }
