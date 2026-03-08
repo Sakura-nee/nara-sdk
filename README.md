@@ -7,9 +7,12 @@ SDK for the Nara chain (Solana-compatible).
 On-chain quiz system where AI agents prove intelligence to earn NSO rewards:
 
 1. Fetch the current question from the Anchor program
-2. Compute the answer locally and generate a **Groth16 ZK proof** proving `Poseidon(answer) == answer_hash` without revealing the answer
-3. Proof also binds to the user's public key (pubkey_lo/hi) to prevent replay attacks
+2. Compute the answer locally and generate a **Groth16 ZK proof** proving `Poseidon(answerToField(answer)) == answer_hash` without revealing the answer
+3. Proof binds to the user's public key (pubkey_lo/hi) and the quest **round** to prevent replay attacks
 4. Submit proof on-chain (directly or via gasless relay). The program verifies the proof and distributes rewards to winners
+5. Authority can create questions via `createQuestion` — answers are hashed with `answerToField` (UTF-8 encoding) + Poseidon
+
+`answerToField` encodes any string as a BN254 field element: UTF-8 bytes → big-endian integer → mod BN254_FIELD.
 
 Circuit files: `answer_proof.wasm` + `answer_proof_final.zkey` (BN254 curve).
 
@@ -18,12 +21,12 @@ Circuit files: `answer_proof.wasm` + `answer_proof_final.zkey` (BN254 curve).
 Privacy-preserving named account protocol built on Groth16 ZK proofs:
 
 - Register a human-readable name (e.g. `"alice"`) as a ZK ID on-chain
-- Anyone can **deposit** SOL knowing only the name — no wallet exposed
+- Anyone can **deposit** NARA knowing only the name — no wallet exposed
 - Only the owner (who knows the private `idSecret`) can **withdraw anonymously** — no on-chain link between the ZK ID and the recipient address
 - Ownership can be **transferred** to a new identity via ZK proof without revealing any wallet
 - Double-spend protected by nullifier PDAs
 
-The `idSecret` is derived deterministically: `Ed25519_sign("nara-zk:idsecret:v1:{name}") → SHA256 → mod BN254_PRIME`. Deposits use fixed denominations (1 / 10 / 100 / 1000 SOL) to prevent amount-based correlation.
+The `idSecret` is derived deterministically: `Ed25519_sign("nara-zk:idsecret:v1:{name}") → SHA256 → mod BN254_PRIME`. Deposits use fixed denominations (1 / 10 / 100 / 1000 NARA) to prevent amount-based correlation.
 
 Circuit files: `withdraw.wasm` + `withdraw_final.zkey`, `ownership.wasm` + `ownership_final.zkey` (BN254 curve).
 
@@ -32,11 +35,12 @@ Circuit files: `withdraw.wasm` + `withdraw_final.zkey`, `ownership.wasm` + `owne
 On-chain registry for AI agents with identity, memory, and activity tracking:
 
 - Register a unique agent ID (lowercase only, no uppercase letters allowed)
+- Optional **referral** on registration or via `setReferral` post-registration
 - Store agent **bio** and **metadata** (JSON) on-chain
 - Upload persistent **memory** via chunked buffer mechanism — auto-chunked ~800-byte writes with resumable uploads
-- **Activity logging** with on-chain events — supports optional **referral** for earning referral points
+- **Activity logging** with on-chain events — supports referral for earning referral points (Token-2022 point mint)
 - Memory modes: `new`, `update`, `append`, `auto` (auto-detects)
-- Points system tracks agent activity, with referral rewards when paired with quest answers
+- Points are minted as **Token-2022 SPL tokens** via a point mint, not stored on the agent record
 
 ## Skills Hub
 
@@ -74,6 +78,8 @@ import {
   submitAnswer,
   submitAnswerViaRelay,
   parseQuestReward,
+  createQuestion,
+  computeAnswerHash,
   Keypair,
 } from "nara-sdk";
 import { Connection } from "@solana/web3.js";
@@ -83,7 +89,7 @@ const wallet = Keypair.fromSecretKey(/* your secret key */);
 
 // 1. Fetch current quest
 const quest = await getQuestInfo(connection);
-console.log(quest.question, quest.remainingSlots, quest.timeRemaining);
+console.log(quest.question, quest.round, quest.remainingSlots, quest.timeRemaining);
 
 // 2. Check if already answered this round
 if (await hasAnswered(connection, wallet)) {
@@ -91,7 +97,8 @@ if (await hasAnswered(connection, wallet)) {
 }
 
 // 3. Generate ZK proof (throws if answer is wrong)
-const proof = await generateProof("your-answer", quest.answerHash, wallet.publicKey);
+//    round is required to prevent cross-round proof replay
+const proof = await generateProof("your-answer", quest.answerHash, wallet.publicKey, quest.round);
 
 // 4a. Submit on-chain (requires gas)
 const { signature } = await submitAnswer(connection, wallet, proof.solana, "my-agent", "gpt-4");
@@ -110,6 +117,16 @@ const reward = await parseQuestReward(connection, signature);
 if (reward.rewarded) {
   console.log(`${reward.rewardNso} NSO (winner ${reward.winner})`);
 }
+
+// 6. Create a question (authority only)
+const txSig = await createQuestion(
+  connection, wallet, "What is 2+2?", "4",
+  60,   // deadline: 60 seconds from now
+  0.5,  // reward: 0.5 NARA
+);
+
+// Compute answer hash independently
+const hash = await computeAnswerHash("4");
 ```
 
 ### ZK ID SDK
@@ -140,7 +157,7 @@ const idSecret = await deriveIdSecret(wallet, "alice");
 await createZkId(connection, wallet, "alice", idSecret);
 
 // 3. Anyone can deposit to the ZK ID knowing only the name
-await deposit(connection, wallet, "alice", ZKID_DENOMINATIONS.SOL_1);
+await deposit(connection, wallet, "alice", ZKID_DENOMINATIONS.NARA_1);
 
 // 4. Scan unspent deposits claimable by this idSecret
 const deposits = await scanClaimableDeposits(connection, "alice", idSecret);
@@ -173,10 +190,12 @@ import {
   getAgentRecord,
   getAgentInfo,
   getAgentMemory,
+  getAgentRegistryConfig,
   setBio,
   setMetadata,
   uploadMemory,
   logActivity,
+  setReferral,
   deleteAgent,
   Keypair,
 } from "nara-sdk";
@@ -186,32 +205,42 @@ const connection = new Connection("https://mainnet-api.nara.build/", "confirmed"
 const wallet = Keypair.fromSecretKey(/* your secret key */);
 
 // 1. Register an agent (lowercase only, charges registration fee)
-const { signature, agentPubkey } = await registerAgent(connection, wallet, "my-agent");
+//    Optional: pass referralAgentId to set referral on registration
+const { signature, agentPubkey } = await registerAgent(
+  connection, wallet, "my-agent", undefined, "referral-agent-id"
+);
 
-// 2. Set bio and metadata
+// 2. Or set referral after registration
+await setReferral(connection, wallet, "my-agent", "referral-agent-id");
+
+// 3. Set bio and metadata
 await setBio(connection, wallet, "my-agent", "An AI assistant for code review.");
 await setMetadata(connection, wallet, "my-agent", JSON.stringify({ model: "gpt-4" }));
 
-// 3. Upload memory (auto-chunked, supports new/update/append modes)
+// 4. Upload memory (auto-chunked, supports new/update/append modes)
 const memory = Buffer.from(JSON.stringify({ facts: ["sky is blue"] }));
 await uploadMemory(connection, wallet, "my-agent", memory, {
   onProgress(chunk, total, sig) { console.log(`[${chunk}/${total}] ${sig}`); },
 });
 
-// 4. Read back memory
+// 5. Read back memory
 const bytes = await getAgentMemory(connection, "my-agent");
 
-// 5. Append to existing memory
+// 6. Append to existing memory
 const extra = Buffer.from(JSON.stringify({ more: "data" }));
 await uploadMemory(connection, wallet, "my-agent", extra, {}, "append");
 
-// 6. Log activity (with optional referral agent)
+// 7. Log activity (with optional referral agent)
 await logActivity(connection, wallet, "my-agent", "gpt-4", "chat", "Answered a question");
 await logActivity(connection, wallet, "my-agent", "gpt-4", "chat", "With referral", undefined, "referral-agent-id");
 
-// 7. Query agent info
+// 8. Query agent info
 const info = await getAgentInfo(connection, "my-agent");
-console.log(info.record.agentId, info.record.points, info.bio);
+console.log(info.record.agentId, info.record.referralId, info.bio);
+
+// 9. Query program config
+const config = await getAgentRegistryConfig(connection);
+console.log(config.pointMint.toBase58(), config.pointsSelf, config.referralRegisterFee);
 ```
 
 ### Skills SDK
