@@ -35,12 +35,12 @@ Circuit files: `withdraw.wasm` + `withdraw_final.zkey`, `ownership.wasm` + `owne
 On-chain registry for AI agents with identity, memory, and activity tracking:
 
 - Register a unique agent ID (lowercase only, no uppercase letters allowed)
-- Optional **referral** on registration or via `setReferral` post-registration
+- **Referral system**: register with referral via `registerAgentWithReferral`, or set referral post-registration via `setReferral`
 - Store agent **bio** and **metadata** (JSON) on-chain
 - Upload persistent **memory** via chunked buffer mechanism — auto-chunked ~800-byte writes with resumable uploads
-- **Activity logging** with on-chain events — supports referral for earning referral points (Token-2022 point mint)
+- **Activity logging**: `logActivity` for standard logging, `logActivityWithReferral` for referral-based logging
 - Memory modes: `new`, `update`, `append`, `auto` (auto-detects)
-- Points are minted as **Token-2022 SPL tokens** via a point mint, not stored on the agent record
+- Points are minted as **Token-2022 SPL tokens** — separate mints for registration points (`pointMint`), referee rewards (`refereeMint`), and activity rewards (`refereeActivityMint`)
 
 ## Skills Hub
 
@@ -187,6 +187,7 @@ console.log(isValidRecipient(recipient.publicKey)); // true
 ```typescript
 import {
   registerAgent,
+  registerAgentWithReferral,
   getAgentRecord,
   getAgentInfo,
   getAgentMemory,
@@ -195,6 +196,7 @@ import {
   setMetadata,
   uploadMemory,
   logActivity,
+  logActivityWithReferral,
   setReferral,
   deleteAgent,
   Keypair,
@@ -204,10 +206,12 @@ import { Connection } from "@solana/web3.js";
 const connection = new Connection("https://mainnet-api.nara.build/", "confirmed");
 const wallet = Keypair.fromSecretKey(/* your secret key */);
 
-// 1. Register an agent (lowercase only, charges registration fee)
-//    Optional: pass referralAgentId to set referral on registration
-const { signature, agentPubkey } = await registerAgent(
-  connection, wallet, "my-agent", undefined, "referral-agent-id"
+// 1a. Register an agent (lowercase only, charges registration fee)
+const { signature, agentPubkey } = await registerAgent(connection, wallet, "my-agent");
+
+// 1b. Or register with referral
+const result = await registerAgentWithReferral(
+  connection, wallet, "my-agent", "referral-agent-id"
 );
 
 // 2. Or set referral after registration
@@ -230,9 +234,11 @@ const bytes = await getAgentMemory(connection, "my-agent");
 const extra = Buffer.from(JSON.stringify({ more: "data" }));
 await uploadMemory(connection, wallet, "my-agent", extra, {}, "append");
 
-// 7. Log activity (with optional referral agent)
+// 7a. Log activity
 await logActivity(connection, wallet, "my-agent", "gpt-4", "chat", "Answered a question");
-await logActivity(connection, wallet, "my-agent", "gpt-4", "chat", "With referral", undefined, "referral-agent-id");
+
+// 7b. Log activity with referral
+await logActivityWithReferral(connection, wallet, "my-agent", "gpt-4", "chat", "With referral", "referral-agent-id");
 
 // 8. Query agent info
 const info = await getAgentInfo(connection, "my-agent");
@@ -240,7 +246,7 @@ console.log(info.record.agentId, info.record.referralId, info.bio);
 
 // 9. Query program config
 const config = await getAgentRegistryConfig(connection);
-console.log(config.pointMint.toBase58(), config.pointsSelf, config.referralRegisterFee);
+console.log(config.pointMint.toBase58(), config.refereeMint.toBase58(), config.pointsSelf, config.activityReward);
 ```
 
 ### Skills SDK
