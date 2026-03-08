@@ -7,7 +7,7 @@
  * - Ownership can be transferred via ZK proof without revealing the owner's wallet
  */
 
-import { Connection, Keypair, PublicKey } from "@solana/web3.js";
+import { Connection, Keypair, PublicKey, TransactionInstruction } from "@solana/web3.js";
 import * as anchor from "@coral-xyz/anchor";
 import { Program, AnchorProvider, Wallet } from "@coral-xyz/anchor";
 import { buildPoseidon as _buildPoseidon } from "circomlibjs";
@@ -540,6 +540,98 @@ export async function withdraw(
       recipient,
     } as any)
     .rpc();
+}
+
+/**
+ * Build a withdraw instruction without executing it.
+ * Useful for composing into an existing transaction.
+ *
+ * Same ZK proof generation as withdraw(), but returns a TransactionInstruction
+ * instead of sending the transaction.
+ *
+ * @param authority   - The payer/signer public key (does not need Keypair since we don't sign)
+ * @param depositInfo - From scanClaimableDeposits()
+ * @param recipient   - Destination address. Must satisfy isValidRecipient().
+ */
+export async function makeWithdrawIx(
+  connection: Connection,
+  authority: PublicKey,
+  name: string,
+  idSecret: bigint,
+  depositInfo: ClaimableDeposit,
+  recipient: PublicKey,
+  options?: ZkIdOptions
+): Promise<TransactionInstruction> {
+  if (!isValidRecipient(recipient)) {
+    throw new Error(
+      "Recipient pubkey is >= BN254 field prime. Use generateValidRecipient() to get a compatible address."
+    );
+  }
+
+  const program = createReadProgram(connection, options?.programId);
+  const programId = new PublicKey(options?.programId ?? DEFAULT_ZKID_PROGRAM_ID);
+  const denominationBN = new BN(depositInfo.denomination.toString());
+
+  // Fetch Merkle tree state
+  const [treePda] = PublicKey.findProgramAddressSync(
+    [new TextEncoder().encode("tree"), denomBuf(denominationBN)],
+    programId
+  );
+  const treeData = await program.account.merkleTreeAccount.fetch(treePda);
+
+  const rootIdx: number = treeData.currentRootIndex;
+  const root = new Uint8Array((treeData.roots as number[][])[rootIdx]!);
+  const filledSubtrees = (treeData.filledSubtrees as number[][]).map(s =>
+    new Uint8Array(s)
+  );
+  const zeros = (treeData.zeros as number[][]).map(z =>
+    bytes32ToBigInt(new Uint8Array(z))
+  );
+
+  const { pathElements, pathIndices } = await buildMerklePath(
+    depositInfo.leafIndex,
+    filledSubtrees,
+    zeros
+  );
+
+  const nullifier = await poseidonHash([idSecret, BigInt(depositInfo.depositIndex)]);
+  const nullifierHashBuf = bigIntToBytes32BE(nullifier);
+  const recipientField = bytes32ToBigInt(recipient.toBytes());
+
+  const input = {
+    idSecret: idSecret.toString(),
+    depositIndex: depositInfo.depositIndex.toString(),
+    pathElements: pathElements.map(e => e.toString()),
+    pathIndices: pathIndices.map(i => i.toString()),
+    root: bytes32ToBigInt(root).toString(),
+    nullifierHash: nullifier.toString(),
+    recipient: recipientField.toString(),
+  };
+
+  let wasmSource = options?.withdrawWasm;
+  let zkeySource = options?.withdrawZkey;
+  if (!wasmSource || !zkeySource) {
+    const defaults = await resolveDefaultZkPaths();
+    wasmSource ??= defaults.withdrawWasm;
+    zkeySource ??= defaults.withdrawZkey;
+  }
+
+  const { proof } = await silentProve(input, wasmSource, zkeySource);
+  const packedProof = packProof(proof);
+
+  return program.methods
+    .withdraw(
+      Buffer.from(packedProof) as any,
+      toBytes32(root),
+      toBytes32(nullifierHashBuf),
+      recipient,
+      denominationBN
+    )
+    .accounts({
+      payer: authority,
+      recipient,
+    } as any)
+    .instruction();
 }
 
 /**

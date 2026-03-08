@@ -66,6 +66,7 @@ export {
   withdraw,
   transferZkId,
   transferZkIdByCommitment,
+  makeWithdrawIx,
   deriveIdSecret,
   computeIdCommitment,
   isValidRecipient,
