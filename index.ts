@@ -18,7 +18,7 @@ export {
 } from "./src/constants";
 
 // Export transaction helper
-export { sendTx, setAltAddress, getAltAddress } from "./src/tx";
+export { sendTx, setAltAddress, getAltAddress, getRecentPriorityFee } from "./src/tx";
 
 // Export quest functions and types
 export {

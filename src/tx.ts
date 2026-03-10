@@ -7,6 +7,7 @@
 
 import {
   AddressLookupTableAccount,
+  ComputeBudgetProgram,
   Connection,
   Keypair,
   PublicKey,
@@ -58,9 +59,28 @@ async function loadAlt(
 }
 
 /**
+ * Get the recent average priority fee (in micro-lamports per CU).
+ * Samples the last few slots via getRecentPrioritizationFees.
+ */
+export async function getRecentPriorityFee(
+  connection: Connection,
+): Promise<number> {
+  const fees = await connection.getRecentPrioritizationFees();
+  if (!fees.length) return 0;
+  const nonZero = fees.filter((f) => f.prioritizationFee > 0);
+  if (!nonZero.length) return 0;
+  const avg = nonZero.reduce((s, f) => s + f.prioritizationFee, 0) / nonZero.length;
+  return Math.ceil(avg);
+}
+
+/**
  * Send a transaction with optional ALT support.
  * If DEFAULT_ALT_ADDRESS is configured, uses VersionedTransaction.
  * Otherwise, uses legacy Transaction.
+ *
+ * opts.computeUnitLimit - set CU limit (ComputeBudgetProgram.setComputeUnitLimit)
+ * opts.computeUnitPrice - set CU price in micro-lamports (ComputeBudgetProgram.setComputeUnitPrice)
+ * opts.computeUnitPrice = "auto" - auto-fetch recent average priority fee
  *
  * @returns transaction signature
  */
@@ -69,8 +89,30 @@ export async function sendTx(
   payer: Keypair,
   instructions: TransactionInstruction[],
   signers?: Keypair[],
-  opts?: { skipPreflight?: boolean }
+  opts?: { skipPreflight?: boolean; computeUnitLimit?: number; computeUnitPrice?: number | "auto" }
 ): Promise<string> {
+  // Prepend compute budget instructions
+  const budgetIxs: TransactionInstruction[] = [];
+  if (opts?.computeUnitLimit) {
+    budgetIxs.push(
+      ComputeBudgetProgram.setComputeUnitLimit({ units: opts.computeUnitLimit })
+    );
+  }
+  if (opts?.computeUnitPrice !== undefined) {
+    let price: number;
+    if (opts.computeUnitPrice === "auto") {
+      price = await getRecentPriorityFee(connection);
+    } else {
+      price = opts.computeUnitPrice;
+    }
+    if (price > 0) {
+      budgetIxs.push(
+        ComputeBudgetProgram.setComputeUnitPrice({ microLamports: price })
+      );
+    }
+  }
+  const allInstructions = [...budgetIxs, ...instructions];
+
   const alt = await loadAlt(connection);
   const { blockhash, lastValidBlockHeight } =
     await connection.getLatestBlockhash("confirmed");
@@ -81,7 +123,7 @@ export async function sendTx(
     const message = new TransactionMessage({
       payerKey: payer.publicKey,
       recentBlockhash: blockhash,
-      instructions,
+      instructions: allInstructions,
     }).compileToV0Message([alt]);
 
     const tx = new VersionedTransaction(message);
@@ -103,7 +145,7 @@ export async function sendTx(
     tx.recentBlockhash = blockhash;
     tx.lastValidBlockHeight = lastValidBlockHeight;
     tx.feePayer = payer.publicKey;
-    for (const ix of instructions) tx.add(ix);
+    for (const ix of allInstructions) tx.add(ix);
     const allSigners = [payer, ...(signers ?? [])];
     const seen = new Set<string>();
     const uniqueSigners = allSigners.filter((s) => {

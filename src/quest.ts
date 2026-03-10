@@ -423,7 +423,11 @@ export async function submitAnswer(
     ixs.push(logIx);
   }
 
-  const signature = await sendTx(connection, wallet, ixs, [], { skipPreflight: true });
+  const signature = await sendTx(connection, wallet, ixs, [], {
+    skipPreflight: true,
+    computeUnitLimit: 500_000,
+    computeUnitPrice: "auto",
+  });
   return { signature };
 }
 
