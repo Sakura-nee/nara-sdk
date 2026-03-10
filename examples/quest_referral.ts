@@ -31,7 +31,6 @@ import {
   Connection,
   LAMPORTS_PER_SOL,
   SystemProgram,
-  Transaction,
 } from "@solana/web3.js";
 import bs58 from "bs58";
 import * as anchor from "@coral-xyz/anchor";
@@ -39,7 +38,7 @@ import { Program, AnchorProvider, Wallet } from "@coral-xyz/anchor";
 import type { NaraAgentRegistry } from "../src/idls/nara_agent_registry";
 import naraAgentRegistryIdl from "../src/idls/nara_agent_registry.json";
 import { DEFAULT_AGENT_REGISTRY_PROGRAM_ID } from "../src/constants";
-import { getAltAddress } from "../src/tx";
+import { getAltAddress, sendTx } from "../src/tx";
 
 const TRANSFER_AMOUNT = 2 * LAMPORTS_PER_SOL;
 
@@ -96,22 +95,12 @@ async function main() {
   console.log("Referral wallet:", referralWallet.publicKey.toBase58());
 
   console.log(`Transferring ${TRANSFER_AMOUNT / LAMPORTS_PER_SOL} NARA...`);
-  const transferTx = new Transaction().add(
-    SystemProgram.transfer({
-      fromPubkey: mainWallet.publicKey,
-      toPubkey: referralWallet.publicKey,
-      lamports: TRANSFER_AMOUNT,
-    })
-  );
-  transferTx.feePayer = mainWallet.publicKey;
-  transferTx.recentBlockhash = (
-    await connection.getLatestBlockhash("confirmed")
-  ).blockhash;
-  transferTx.sign(mainWallet);
-  const transferSig = await connection.sendRawTransaction(
-    transferTx.serialize()
-  );
-  await connection.confirmTransaction(transferSig, "confirmed");
+  const transferIx = SystemProgram.transfer({
+    fromPubkey: mainWallet.publicKey,
+    toPubkey: referralWallet.publicKey,
+    lamports: TRANSFER_AMOUNT,
+  });
+  const transferSig = await sendTx(connection, mainWallet, [transferIx]);
   console.log("Transfer tx:", transferSig);
 
   // ── 2. Register main agent ─────────────────────────────────────

@@ -160,14 +160,38 @@ export async function sendTx(
     });
   }
 
-  const confirmation = await connection.confirmTransaction(
-    { signature, blockhash, lastValidBlockHeight },
-    "confirmed"
-  );
-  if (confirmation.value.err) {
-    throw new Error(
-      `Transaction ${signature} failed: ${JSON.stringify(confirmation.value.err)}`
-    );
+  // Poll for confirmation (avoid confirmTransaction which uses WebSocket)
+  const startTime = Date.now();
+  const TIMEOUT_MS = 20_000;
+  const POLL_INTERVAL_MS = 1_000;
+
+  while (Date.now() - startTime < TIMEOUT_MS) {
+    const currentBlockHeight = await connection.getBlockHeight("confirmed");
+    if (currentBlockHeight > lastValidBlockHeight) {
+      throw new Error(
+        `Transaction ${signature} expired: block height exceeded`
+      );
+    }
+
+    const statusResult = await connection.getSignatureStatuses([signature]);
+    const status = statusResult?.value?.[0];
+
+    if (status) {
+      if (status.err) {
+        throw new Error(
+          `Transaction ${signature} failed: ${JSON.stringify(status.err)}`
+        );
+      }
+      if (
+        status.confirmationStatus === "confirmed" ||
+        status.confirmationStatus === "finalized"
+      ) {
+        return signature;
+      }
+    }
+
+    await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
   }
-  return signature;
+
+  throw new Error(`Transaction ${signature} confirmation timeout`);
 }
