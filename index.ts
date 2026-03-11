@@ -17,6 +17,9 @@ export {
   DEFAULT_ALT_ADDRESS,
 } from "./src/constants";
 
+// Export signing utilities
+export { signParams, signUrl } from "./src/sign";
+
 // Export transaction helper
 export { sendTx, setAltAddress, getAltAddress, getRecentPriorityFee } from "./src/tx";
 
