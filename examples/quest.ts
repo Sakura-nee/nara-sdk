@@ -116,7 +116,7 @@ async function runTest(
 
   // Check stake status
   const stakeInfo = await getStakeInfo(connection, testWallet.publicKey);
-  console.log(`  Stake before: ${stakeInfo?.amount ?? 0} SOL (required: ${quest.stakeRequirement} SOL)`);
+  console.log(`  Stake before: ${stakeInfo?.amount ?? 0} SOL (required: ${quest.effectiveStakeRequirement.toFixed(4)} SOL)`);
 
   // Submit answer with stake in the same tx
   console.log(`  Submitting with stake=${stakeOption}...`);

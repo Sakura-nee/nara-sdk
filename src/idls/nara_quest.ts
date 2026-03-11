@@ -210,66 +210,16 @@ export type NaraQuest = {
       "args": []
     },
     {
-      "name": "setMaxRewardCount",
+      "name": "setRewardConfig",
       "discriminator": [
-        247,
-        62,
-        67,
-        243,
-        249,
-        243,
-        102,
-        62
-      ],
-      "accounts": [
-        {
-          "name": "gameConfig",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  113,
-                  117,
-                  101,
-                  115,
-                  116,
-                  95,
-                  99,
-                  111,
-                  110,
-                  102,
-                  105,
-                  103
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority",
-          "signer": true
-        }
-      ],
-      "args": [
-        {
-          "name": "maxRewardCount",
-          "type": "u32"
-        }
-      ]
-    },
-    {
-      "name": "setMinRewardCount",
-      "discriminator": [
-        108,
-        213,
-        24,
-        47,
-        93,
-        149,
-        58,
-        4
+        163,
+        34,
+        211,
+        14,
+        25,
+        118,
+        181,
+        233
       ],
       "accounts": [
         {
@@ -306,6 +256,68 @@ export type NaraQuest = {
         {
           "name": "minRewardCount",
           "type": "u32"
+        },
+        {
+          "name": "maxRewardCount",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "setStakeConfig",
+      "discriminator": [
+        84,
+        37,
+        76,
+        39,
+        236,
+        111,
+        214,
+        191
+      ],
+      "accounts": [
+        {
+          "name": "gameConfig",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  113,
+                  117,
+                  101,
+                  115,
+                  116,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "bpsHigh",
+          "type": "u64"
+        },
+        {
+          "name": "bpsLow",
+          "type": "u64"
+        },
+        {
+          "name": "decaySeconds",
+          "type": "i64"
         }
       ]
     },
@@ -504,6 +516,30 @@ export type NaraQuest = {
         48
       ],
       "accounts": [
+        {
+          "name": "gameConfig",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  113,
+                  117,
+                  101,
+                  115,
+                  116,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
         {
           "name": "pool",
           "writable": true,
@@ -1198,12 +1234,12 @@ export type NaraQuest = {
     {
       "code": 6008,
       "name": "invalidMinRewardCount",
-      "msg": "min_reward_count must be > 0 and <= max_reward_count"
+      "msg": "Invalid reward config: need 0 < min <= max"
     },
     {
       "code": 6009,
-      "name": "invalidMaxRewardCount",
-      "msg": "max_reward_count must be >= min_reward_count"
+      "name": "invalidStakeConfig",
+      "msg": "Stake config values must be > 0"
     },
     {
       "code": 6010,
@@ -1214,6 +1250,11 @@ export type NaraQuest = {
       "code": 6011,
       "name": "insufficientStakeBalance",
       "msg": "Unstake amount exceeds staked balance"
+    },
+    {
+      "code": 6012,
+      "name": "insufficientStake",
+      "msg": "Stake does not meet dynamic requirement"
     }
   ],
   "types": [
@@ -1265,6 +1306,18 @@ export type NaraQuest = {
           {
             "name": "maxRewardCount",
             "type": "u32"
+          },
+          {
+            "name": "stakeBpsHigh",
+            "type": "u64"
+          },
+          {
+            "name": "stakeBpsLow",
+            "type": "u64"
+          },
+          {
+            "name": "decaySeconds",
+            "type": "i64"
           },
           {
             "name": "padding",
@@ -1325,11 +1378,19 @@ export type NaraQuest = {
             "type": "u32"
           },
           {
-            "name": "stakeRequirement",
+            "name": "createdAt",
+            "type": "i64"
+          },
+          {
+            "name": "stakeHigh",
             "type": "u64"
           },
           {
-            "name": "minWinnerStake",
+            "name": "stakeLow",
+            "type": "u64"
+          },
+          {
+            "name": "avgParticipantStake",
             "type": "u64"
           },
           {

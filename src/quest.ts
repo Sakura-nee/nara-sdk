@@ -50,10 +50,16 @@ export interface QuestInfo {
   deadline: number;
   timeRemaining: number;
   expired: boolean;
-  /** Minimum stake required to submit an answer (in NARA) */
-  stakeRequirement: number;
-  /** Minimum stake to be eligible for rewards (in NARA) */
-  minWinnerStake: number;
+  /** High stake requirement for the current round (in NARA, decays over time) */
+  stakeHigh: number;
+  /** Low stake requirement for the current round (in NARA, floor after decay) */
+  stakeLow: number;
+  /** Running average participant stake for the current round (in NARA) */
+  avgParticipantStake: number;
+  /** Unix timestamp when the current question was created */
+  createdAt: number;
+  /** Current effective stake requirement after parabolic decay (in NARA) */
+  effectiveStakeRequirement: number;
 }
 
 export interface StakeInfo {
@@ -242,6 +248,26 @@ function getStakeTokenAccount(stakeRecordPda: PublicKey): PublicKey {
   return getAssociatedTokenAddressSync(WSOL_MINT, stakeRecordPda, true);
 }
 
+/**
+ * Compute the effective stake requirement using the parabolic decay formula.
+ * effective = stakeHigh - (stakeHigh - stakeLow) * (elapsed / decay)^2
+ * All amounts in NARA (not lamports).
+ */
+function computeEffectiveStake(
+  stakeHigh: number,
+  stakeLow: number,
+  createdAt: number,
+  decaySeconds: number,
+  now: number
+): number {
+  if (decaySeconds <= 0) return stakeLow;
+  const elapsed = now - createdAt;
+  if (elapsed >= decaySeconds) return stakeLow;
+  const range = stakeHigh - stakeLow;
+  const ratio = elapsed / decaySeconds;
+  return stakeHigh - range * ratio * ratio;
+}
+
 // ─── SDK functions ───────────────────────────────────────────────
 
 /**
@@ -263,6 +289,23 @@ export async function getQuestInfo(
 
   const active = pool.question.length > 0 && secsLeft > 0;
 
+  const stakeHigh = Number(pool.stakeHigh.toString()) / LAMPORTS_PER_SOL;
+  const stakeLow = Number(pool.stakeLow.toString()) / LAMPORTS_PER_SOL;
+  const createdAt = pool.createdAt.toNumber();
+
+  // Fetch decay_seconds from GameConfig for effective calculation
+  const programId = new PublicKey(options?.programId ?? DEFAULT_QUEST_PROGRAM_ID);
+  const [configPda] = PublicKey.findProgramAddressSync(
+    [new TextEncoder().encode("quest_config")],
+    programId
+  );
+  const config = await program.account.gameConfig.fetch(configPda);
+  const decaySeconds = config.decaySeconds.toNumber();
+
+  const effectiveStakeRequirement = computeEffectiveStake(
+    stakeHigh, stakeLow, createdAt, decaySeconds, now
+  );
+
   return {
     active,
     round: pool.round.toString(),
@@ -277,8 +320,11 @@ export async function getQuestInfo(
     deadline,
     timeRemaining: secsLeft,
     expired: secsLeft <= 0,
-    stakeRequirement: Number(pool.stakeRequirement.toString()) / LAMPORTS_PER_SOL,
-    minWinnerStake: Number(pool.minWinnerStake.toString()) / LAMPORTS_PER_SOL,
+    stakeHigh,
+    stakeLow,
+    avgParticipantStake: Number(pool.avgParticipantStake.toString()) / LAMPORTS_PER_SOL,
+    createdAt,
+    effectiveStakeRequirement,
   };
 }
 
@@ -372,7 +418,7 @@ export async function submitAnswer(
     if (options.stake === "auto") {
       const quest = await getQuestInfo(connection, wallet, options);
       const stakeInfo = await getStakeInfo(connection, wallet.publicKey, options);
-      const required = quest.stakeRequirement;
+      const required = quest.effectiveStakeRequirement;
       const current = stakeInfo?.amount ?? 0;
       const deficit = required - current;
       if (deficit > 0) {
@@ -649,34 +695,40 @@ export async function initializeQuest(
 }
 
 /**
- * Set the maximum reward count (authority only).
+ * Set the reward config (authority only).
  */
-export async function setMaxRewardCount(
+export async function setRewardConfig(
   connection: Connection,
   wallet: Keypair,
+  minRewardCount: number,
   maxRewardCount: number,
   options?: QuestOptions
 ): Promise<string> {
   const program = createProgram(connection, wallet, options?.programId);
   const ix = await program.methods
-    .setMaxRewardCount(maxRewardCount)
+    .setRewardConfig(minRewardCount, maxRewardCount)
     .accounts({ authority: wallet.publicKey } as any)
     .instruction();
   return sendTx(connection, wallet, [ix]);
 }
 
 /**
- * Set the minimum reward count (authority only).
+ * Set the stake config (authority only).
+ * @param bpsHigh - Upper bound multiplier in basis points (e.g. 100000 = 10x average)
+ * @param bpsLow - Lower bound multiplier in basis points (e.g. 1000 = 0.1x average)
+ * @param decaySeconds - Time window for parabolic decay from high to low
  */
-export async function setMinRewardCount(
+export async function setStakeConfig(
   connection: Connection,
   wallet: Keypair,
-  minRewardCount: number,
+  bpsHigh: number,
+  bpsLow: number,
+  decaySeconds: number,
   options?: QuestOptions
 ): Promise<string> {
   const program = createProgram(connection, wallet, options?.programId);
   const ix = await program.methods
-    .setMinRewardCount(minRewardCount)
+    .setStakeConfig(new BN(bpsHigh), new BN(bpsLow), new BN(decaySeconds))
     .accounts({ authority: wallet.publicKey } as any)
     .instruction();
   return sendTx(connection, wallet, [ix]);
@@ -705,7 +757,14 @@ export async function transferQuestAuthority(
 export async function getQuestConfig(
   connection: Connection,
   options?: QuestOptions
-): Promise<{ authority: PublicKey; minRewardCount: number; maxRewardCount: number }> {
+): Promise<{
+  authority: PublicKey;
+  minRewardCount: number;
+  maxRewardCount: number;
+  stakeBpsHigh: number;
+  stakeBpsLow: number;
+  decaySeconds: number;
+}> {
   const kp = Keypair.generate();
   const program = createProgram(connection, kp, options?.programId);
   const programId = new PublicKey(options?.programId ?? DEFAULT_QUEST_PROGRAM_ID);
@@ -718,5 +777,8 @@ export async function getQuestConfig(
     authority: config.authority,
     minRewardCount: config.minRewardCount,
     maxRewardCount: config.maxRewardCount,
+    stakeBpsHigh: Number(config.stakeBpsHigh.toString()),
+    stakeBpsLow: Number(config.stakeBpsLow.toString()),
+    decaySeconds: config.decaySeconds.toNumber(),
   };
 }
