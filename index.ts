@@ -21,7 +21,7 @@ export {
 export { signParams, signUrl } from "./src/sign";
 
 // Export transaction helper
-export { sendTx, setAltAddress, getAltAddress, getRecentPriorityFee } from "./src/tx";
+export { sendTx, setAltAddress, getAltAddress, getRecentPriorityFee, setSkipPreflight, getSkipPreflight } from "./src/tx";
 
 // Export quest functions and types
 export {

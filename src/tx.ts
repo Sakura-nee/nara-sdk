@@ -21,6 +21,23 @@ import { DEFAULT_ALT_ADDRESS } from "./constants";
 let _cachedAlts: AddressLookupTableAccount[] = [];
 let _cachedAltKey: string = "";
 let _overrideAltAddresses: string[] | null = null;
+let _globalSkipPreflight: boolean | null = null;
+
+/**
+ * Set global skipPreflight for all transactions.
+ * Pass null to ignore (use per-call opts), true/false to set default.
+ * Per-call opts.skipPreflight takes precedence over this setting.
+ */
+export function setSkipPreflight(value: boolean | null): void {
+  _globalSkipPreflight = value;
+}
+
+/**
+ * Get the current global skipPreflight setting.
+ */
+export function getSkipPreflight(): boolean | null {
+  return _globalSkipPreflight;
+}
 
 /**
  * Set global ALT addresses at runtime (overrides DEFAULT_ALT_ADDRESS / env).
@@ -157,7 +174,7 @@ export async function sendTx(
     });
     tx.sign(uniqueSigners);
     signature = await connection.sendRawTransaction(tx.serialize(), {
-      skipPreflight: opts?.skipPreflight ?? false,
+      skipPreflight: opts?.skipPreflight ?? _globalSkipPreflight ?? false,
     });
   } else {
     const tx = new Transaction();
@@ -175,7 +192,7 @@ export async function sendTx(
     });
     tx.sign(...uniqueSigners);
     signature = await connection.sendRawTransaction(tx.serialize(), {
-      skipPreflight: opts?.skipPreflight ?? false,
+      skipPreflight: opts?.skipPreflight ?? _globalSkipPreflight ?? false,
     });
   }
 
