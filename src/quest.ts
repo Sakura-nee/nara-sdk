@@ -646,14 +646,13 @@ export async function getStakeInfo(
 }
 
 /**
- * Create a new quest question on-chain (authority only).
+ * Create a new quest question on-chain (authority or quest_authority).
  *
  * @param connection - Solana connection
- * @param wallet - Authority keypair (must be the program authority)
+ * @param wallet - Authority keypair (must be the program authority or quest_authority)
  * @param question - The question text
  * @param answer - The answer string (will be hashed with Poseidon + answerToField)
  * @param deadlineSeconds - Duration in seconds from now until the deadline
- * @param rewardSol - Total reward amount in SOL/NARA
  * @param difficulty - Difficulty level (default: 1)
  * @param options - Optional program ID override
  */
@@ -663,18 +662,16 @@ export async function createQuestion(
   question: string,
   answer: string,
   deadlineSeconds: number,
-  rewardSol: number,
   difficulty: number = 1,
   options?: QuestOptions
 ): Promise<string> {
   const program = createProgram(connection, wallet, options?.programId);
   const answerHash = await computeAnswerHash(answer);
   const deadline = new BN(Math.floor(Date.now() / 1000) + deadlineSeconds);
-  const rewardAmount = new BN(Math.round(rewardSol * LAMPORTS_PER_SOL));
 
   const ix = await program.methods
-    .createQuestion(question, answerHash as any, deadline, rewardAmount, difficulty)
-    .accounts({ authority: wallet.publicKey } as any)
+    .createQuestion(question, answerHash as any, deadline, difficulty)
+    .accounts({ caller: wallet.publicKey } as any)
     .instruction();
   return sendTx(connection, wallet, [ix]);
 }
@@ -755,6 +752,60 @@ export async function transferQuestAuthority(
 }
 
 /**
+ * Set a quest authority that can create questions (authority only).
+ */
+export async function setQuestAuthority(
+  connection: Connection,
+  wallet: Keypair,
+  newQuestAuthority: PublicKey,
+  options?: QuestOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  const ix = await program.methods
+    .setQuestAuthority(newQuestAuthority)
+    .accounts({ authority: wallet.publicKey } as any)
+    .instruction();
+  return sendTx(connection, wallet, [ix]);
+}
+
+/**
+ * Set the minimum quest interval in seconds (authority only).
+ */
+export async function setQuestInterval(
+  connection: Connection,
+  wallet: Keypair,
+  minQuestInterval: number,
+  options?: QuestOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  const ix = await program.methods
+    .setQuestInterval(new BN(minQuestInterval))
+    .accounts({ authority: wallet.publicKey } as any)
+    .instruction();
+  return sendTx(connection, wallet, [ix]);
+}
+
+/**
+ * Set the reward per share and extra reward (authority only).
+ */
+export async function setRewardPerShare(
+  connection: Connection,
+  wallet: Keypair,
+  rewardPerShare: number | BN,
+  extraReward: number | BN,
+  options?: QuestOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  const rps = typeof rewardPerShare === "number" ? new BN(rewardPerShare) : rewardPerShare;
+  const er = typeof extraReward === "number" ? new BN(extraReward) : extraReward;
+  const ix = await program.methods
+    .setRewardPerShare(rps, er)
+    .accounts({ authority: wallet.publicKey } as any)
+    .instruction();
+  return sendTx(connection, wallet, [ix]);
+}
+
+/**
  * Get quest program config (authority, min/max reward count).
  */
 export async function getQuestConfig(
@@ -767,6 +818,11 @@ export async function getQuestConfig(
   stakeBpsHigh: number;
   stakeBpsLow: number;
   decayMs: number;
+  treasury: PublicKey;
+  questAuthority: PublicKey;
+  minQuestInterval: number;
+  rewardPerShare: number;
+  extraReward: number;
 }> {
   const kp = Keypair.generate();
   const program = createProgram(connection, kp, options?.programId);
@@ -783,5 +839,10 @@ export async function getQuestConfig(
     stakeBpsHigh: Number(config.stakeBpsHigh.toString()),
     stakeBpsLow: Number(config.stakeBpsLow.toString()),
     decayMs: Number(config.decayMs.toString()),
+    treasury: config.treasury,
+    questAuthority: config.questAuthority,
+    minQuestInterval: Number(config.minQuestInterval.toString()),
+    rewardPerShare: Number(config.rewardPerShare.toString()),
+    extraReward: Number(config.extraReward.toString()),
   };
 }

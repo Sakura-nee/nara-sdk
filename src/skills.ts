@@ -181,18 +181,11 @@ export async function registerSkill(
     throw new Error(`Skill name must not contain uppercase letters: "${name}"`);
   }
   const program = createProgram(connection, wallet, options?.programId);
-  const configPda = getConfigPda(program.programId);
-  const configInfo = await connection.getAccountInfo(configPda);
-  if (!configInfo) throw new Error("Skills program config not initialized");
-  const configBuf = Buffer.from(configInfo.data);
-  // ProgramConfig bytemuck: 8 disc + 32 admin + 8 register_fee + 32 fee_recipient
-  const feeRecipient = new PublicKey(configBuf.subarray(48, 80));
 
   const ix = await program.methods
     .registerSkill(name, author)
     .accounts({
       authority: wallet.publicKey,
-      feeRecipient,
     } as any)
     .instruction();
   const signature = await sendTx(connection, wallet, [ix]);
@@ -500,7 +493,7 @@ export async function uploadSkillContent(
 export async function getConfig(
   connection: Connection,
   options?: SkillOptions
-): Promise<{ admin: PublicKey; registerFee: number; feeRecipient: PublicKey }> {
+): Promise<{ admin: PublicKey; registerFee: number; feeVault: PublicKey }> {
   const pid = new PublicKey(options?.programId ?? DEFAULT_SKILLS_PROGRAM_ID);
   const configPda = getConfigPda(pid);
   const accountInfo = await connection.getAccountInfo(configPda);
@@ -511,8 +504,8 @@ export async function getConfig(
   let offset = 8; // skip discriminator
   const admin = new PublicKey(buf.subarray(offset, offset + 32)); offset += 32;
   const registerFee = Number(buf.readBigUInt64LE(offset)); offset += 8;
-  const feeRecipient = new PublicKey(buf.subarray(offset, offset + 32));
-  return { admin, registerFee, feeRecipient };
+  const feeVault = new PublicKey(buf.subarray(offset, offset + 32));
+  return { admin, registerFee, feeVault };
 }
 
 // ─── Admin functions ────────────────────────────────────────────
@@ -552,17 +545,18 @@ export async function updateAdmin(
 }
 
 /**
- * Update the fee recipient (admin-only).
+ * Withdraw accumulated fees from the fee vault (admin-only).
  */
-export async function updateFeeRecipient(
+export async function withdrawFees(
   connection: Connection,
   wallet: Keypair,
-  newRecipient: PublicKey,
+  amount: number | anchor.BN,
   options?: SkillOptions
 ): Promise<string> {
   const program = createProgram(connection, wallet, options?.programId);
+  const amt = typeof amount === "number" ? new anchor.BN(amount) : amount;
   const ix = await program.methods
-    .updateFeeRecipient(newRecipient)
+    .withdrawFees(amt)
     .accounts({ admin: wallet.publicKey } as any)
     .instruction();
   return sendTx(connection, wallet, [ix]);

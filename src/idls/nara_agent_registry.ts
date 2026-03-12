@@ -445,6 +445,28 @@ export type NaraAgentRegistry = {
           }
         },
         {
+          "name": "feeVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  101,
+                  101,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
           "name": "pointMint",
           "writable": true,
           "pda": {
@@ -1223,8 +1245,26 @@ export type NaraAgentRegistry = {
           }
         },
         {
-          "name": "feeRecipient",
-          "writable": true
+          "name": "feeVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  101,
+                  101,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "systemProgram",
@@ -1297,8 +1337,26 @@ export type NaraAgentRegistry = {
           }
         },
         {
-          "name": "feeRecipient",
-          "writable": true
+          "name": "feeVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  101,
+                  101,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "pointMint",
@@ -1968,53 +2026,6 @@ export type NaraAgentRegistry = {
       ]
     },
     {
-      "name": "updateFeeRecipient",
-      "discriminator": [
-        249,
-        0,
-        198,
-        35,
-        183,
-        123,
-        57,
-        188
-      ],
-      "accounts": [
-        {
-          "name": "admin",
-          "signer": true,
-          "relations": [
-            "config"
-          ]
-        },
-        {
-          "name": "config",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  99,
-                  111,
-                  110,
-                  102,
-                  105,
-                  103
-                ]
-              }
-            ]
-          }
-        }
-      ],
-      "args": [
-        {
-          "name": "newRecipient",
-          "type": "pubkey"
-        }
-      ]
-    },
-    {
       "name": "updatePointsConfig",
       "discriminator": [
         15,
@@ -2163,6 +2174,79 @@ export type NaraAgentRegistry = {
       "args": [
         {
           "name": "newFee",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "withdrawFees",
+      "discriminator": [
+        198,
+        212,
+        171,
+        109,
+        144,
+        215,
+        174,
+        89
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "feeVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  101,
+                  101,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
           "type": "u64"
         }
       ]
@@ -2363,8 +2447,8 @@ export type NaraAgentRegistry = {
     },
     {
       "code": 6015,
-      "name": "invalidFeeRecipient",
-      "msg": "Fee recipient does not match config.fee_recipient"
+      "name": "insufficientFeeVaultBalance",
+      "msg": "Fee vault has insufficient balance for withdrawal"
     },
     {
       "code": 6016,
@@ -2614,7 +2698,7 @@ export type NaraAgentRegistry = {
             "type": "pubkey"
           },
           {
-            "name": "feeRecipient",
+            "name": "feeVault",
             "type": "pubkey"
           },
           {

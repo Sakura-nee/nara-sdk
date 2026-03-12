@@ -349,15 +349,10 @@ export async function createZkId(
   const idCommitment = await poseidonHash([idSecret]);
   const idCommitmentBuf = bigIntToBytes32BE(idCommitment);
 
-  // Fetch config for fee_recipient
-  const [configPda] = findConfigPda(programId);
-  const config = await program.account.configAccount.fetch(configPda);
-
   const ix = await program.methods
     .register(toBytes32(nameHashBuf), toBytes32(idCommitmentBuf))
     .accounts({
       payer: payer.publicKey,
-      feeRecipient: config.feeRecipient,
     } as any)
     .instruction();
   return sendTx(connection, payer, [ix]);
@@ -779,7 +774,7 @@ export async function transferZkIdByCommitment(
 export async function getConfig(
   connection: Connection,
   options?: ZkIdOptions
-): Promise<{ admin: PublicKey; feeRecipient: PublicKey; feeAmount: number }> {
+): Promise<{ admin: PublicKey; feeVault: PublicKey; feeAmount: number }> {
   const programId = new PublicKey(options?.programId ?? DEFAULT_ZKID_PROGRAM_ID);
   const [configPda] = PublicKey.findProgramAddressSync(
     [new TextEncoder().encode("config")],
@@ -793,22 +788,21 @@ export async function getConfig(
   const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
   let offset = 8; // skip discriminator
   const admin = new PublicKey(data.subarray(offset, offset + 32)); offset += 32;
-  const feeRecipient = new PublicKey(data.subarray(offset, offset + 32)); offset += 32;
+  const feeVault = new PublicKey(data.subarray(offset, offset + 32)); offset += 32;
   const feeAmount = Number(view.getBigUint64(offset, true));
-  return { admin, feeRecipient, feeAmount };
+  return { admin, feeVault, feeAmount };
 }
 
 export async function initializeConfig(
   connection: Connection,
   wallet: Keypair,
-  feeRecipient: PublicKey,
   feeAmount: BN | number,
   options?: ZkIdOptions
 ): Promise<string> {
   const program = createProgram(connection, wallet, options?.programId);
   const fee = typeof feeAmount === "number" ? new BN(feeAmount) : feeAmount;
   const ix = await program.methods
-    .initializeConfig(feeRecipient, fee)
+    .initializeConfig(fee)
     .accounts({ admin: wallet.publicKey } as any)
     .instruction();
   return sendTx(connection, wallet, [ix]);
@@ -821,14 +815,31 @@ export async function updateConfig(
   connection: Connection,
   wallet: Keypair,
   newAdmin: PublicKey,
-  newFeeRecipient: PublicKey,
   newFeeAmount: BN | number,
   options?: ZkIdOptions
 ): Promise<string> {
   const program = createProgram(connection, wallet, options?.programId);
   const fee = typeof newFeeAmount === "number" ? new BN(newFeeAmount) : newFeeAmount;
   const ix = await program.methods
-    .updateConfig(newAdmin, newFeeRecipient, fee)
+    .updateConfig(newAdmin, fee)
+    .accounts({ admin: wallet.publicKey } as any)
+    .instruction();
+  return sendTx(connection, wallet, [ix]);
+}
+
+/**
+ * Withdraw accumulated fees from the fee vault (admin-only).
+ */
+export async function withdrawFees(
+  connection: Connection,
+  wallet: Keypair,
+  amount: BN | number,
+  options?: ZkIdOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  const amt = typeof amount === "number" ? new BN(amount) : amount;
+  const ix = await program.methods
+    .withdrawFees(amt)
     .accounts({ admin: wallet.publicKey } as any)
     .instruction();
   return sendTx(connection, wallet, [ix]);

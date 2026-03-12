@@ -455,8 +455,26 @@ export type NaraSkillsHub = {
           }
         },
         {
-          "name": "feeRecipient",
-          "writable": true
+          "name": "feeVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  101,
+                  101,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "systemProgram",
@@ -646,50 +664,6 @@ export type NaraSkillsHub = {
       ]
     },
     {
-      "name": "updateFeeRecipient",
-      "discriminator": [
-        249,
-        0,
-        198,
-        35,
-        183,
-        123,
-        57,
-        188
-      ],
-      "accounts": [
-        {
-          "name": "admin",
-          "signer": true
-        },
-        {
-          "name": "config",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  99,
-                  111,
-                  110,
-                  102,
-                  105,
-                  103
-                ]
-              }
-            ]
-          }
-        }
-      ],
-      "args": [
-        {
-          "name": "newRecipient",
-          "type": "pubkey"
-        }
-      ]
-    },
-    {
       "name": "updateMetadata",
       "discriminator": [
         170,
@@ -805,6 +779,76 @@ export type NaraSkillsHub = {
       "args": [
         {
           "name": "newFee",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "withdrawFees",
+      "discriminator": [
+        198,
+        212,
+        171,
+        109,
+        144,
+        215,
+        174,
+        89
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  101,
+                  101,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
           "type": "u64"
         }
       ]
@@ -954,7 +998,7 @@ export type NaraSkillsHub = {
     {
       "code": 6003,
       "name": "unauthorized",
-      "msg": "Unauthorized"
+      "msg": "unauthorized"
     },
     {
       "code": 6004,
@@ -1018,31 +1062,36 @@ export type NaraSkillsHub = {
     },
     {
       "code": 6016,
-      "name": "invalidFeeRecipient",
-      "msg": "Fee recipient does not match config.fee_recipient"
+      "name": "invalidFeeVault",
+      "msg": "Fee vault does not match the expected PDA"
     },
     {
       "code": 6017,
+      "name": "insufficientVaultBalance",
+      "msg": "Insufficient vault balance for withdrawal"
+    },
+    {
+      "code": 6018,
       "name": "authorTooLong",
       "msg": "Author name too long: max 64 bytes"
     },
     {
-      "code": 6018,
+      "code": 6019,
       "name": "nameNotLowercase",
       "msg": "Name must be lowercase: uppercase letters are not allowed"
     },
     {
-      "code": 6019,
+      "code": 6020,
       "name": "contentAlreadyInitialized",
       "msg": "new_content account is already initialized"
     },
     {
-      "code": 6020,
+      "code": 6021,
       "name": "contentSelfReference",
       "msg": "new_content must differ from old_content"
     },
     {
-      "code": 6021,
+      "code": 6022,
       "name": "metadataTooLong",
       "msg": "Metadata too long: max 800 bytes"
     }
@@ -1064,7 +1113,7 @@ export type NaraSkillsHub = {
           {
             "name": "admin",
             "docs": [
-              "Who may call update_admin / update_fee_recipient / update_register_fee."
+              "Who may call update_admin / update_register_fee / withdraw_fees."
             ],
             "type": "pubkey"
           },
@@ -1076,9 +1125,9 @@ export type NaraSkillsHub = {
             "type": "u64"
           },
           {
-            "name": "feeRecipient",
+            "name": "feeVault",
             "docs": [
-              "Account that receives registration fees. Defaults to admin at init."
+              "PDA vault that collects registration fees. seeds = [b\"fee_vault\"], immutable."
             ],
             "type": "pubkey"
           },

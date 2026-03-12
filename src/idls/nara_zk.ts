@@ -251,15 +251,32 @@ export type NaraZk = {
           }
         },
         {
+          "name": "feeVault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  101,
+                  101,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
           "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
-        {
-          "name": "feeRecipient",
-          "type": "pubkey"
-        },
         {
           "name": "feeAmount",
           "type": "u64"
@@ -350,11 +367,26 @@ export type NaraZk = {
           }
         },
         {
-          "name": "feeRecipient",
-          "docs": [
-            "Receives the registration fee. Must match config.fee_recipient."
-          ],
-          "writable": true
+          "name": "feeVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  101,
+                  101,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "systemProgram",
@@ -491,10 +523,6 @@ export type NaraZk = {
           "type": "pubkey"
         },
         {
-          "name": "newFeeRecipient",
-          "type": "pubkey"
-        },
-        {
           "name": "newFeeAmount",
           "type": "u64"
         }
@@ -627,6 +655,76 @@ export type NaraZk = {
         },
         {
           "name": "denomination",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "withdrawFees",
+      "discriminator": [
+        198,
+        212,
+        171,
+        109,
+        144,
+        215,
+        174,
+        89
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "feeVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  101,
+                  101,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
           "type": "u64"
         }
       ]
@@ -806,8 +904,8 @@ export type NaraZk = {
     },
     {
       "code": 6010,
-      "name": "invalidFeeRecipient",
-      "msg": "Fee recipient account does not match config"
+      "name": "insufficientVaultBalance",
+      "msg": "Insufficient vault balance"
     }
   ],
   "types": [
@@ -815,7 +913,7 @@ export type NaraZk = {
       "name": "configAccount",
       "docs": [
         "Program config. PDA seeds: [\"config\"]",
-        "Stores admin, fee recipient, and registration fee amount."
+        "Stores admin, fee vault address, and registration fee amount."
       ],
       "serialization": "bytemuck",
       "repr": {
@@ -829,7 +927,7 @@ export type NaraZk = {
             "type": "pubkey"
           },
           {
-            "name": "feeRecipient",
+            "name": "feeVault",
             "type": "pubkey"
           },
           {

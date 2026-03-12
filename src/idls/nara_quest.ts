@@ -28,7 +28,6 @@ export type NaraQuest = {
       "accounts": [
         {
           "name": "gameConfig",
-          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -99,7 +98,37 @@ export type NaraQuest = {
           }
         },
         {
-          "name": "authority",
+          "name": "treasury",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  113,
+                  117,
+                  101,
+                  115,
+                  116,
+                  95,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "caller",
+          "docs": [
+            "Caller: either authority or quest_authority"
+          ],
           "writable": true,
           "signer": true
         },
@@ -125,10 +154,6 @@ export type NaraQuest = {
         {
           "name": "deadline",
           "type": "i64"
-        },
-        {
-          "name": "rewardAmount",
-          "type": "u64"
         },
         {
           "name": "difficulty",
@@ -198,6 +223,32 @@ export type NaraQuest = {
           }
         },
         {
+          "name": "treasury",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  113,
+                  117,
+                  101,
+                  115,
+                  116,
+                  95,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
           "name": "authority",
           "writable": true,
           "signer": true
@@ -208,6 +259,106 @@ export type NaraQuest = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "setQuestAuthority",
+      "discriminator": [
+        19,
+        140,
+        189,
+        111,
+        121,
+        111,
+        118,
+        50
+      ],
+      "accounts": [
+        {
+          "name": "gameConfig",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  113,
+                  117,
+                  101,
+                  115,
+                  116,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "newQuestAuthority",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "setQuestInterval",
+      "discriminator": [
+        69,
+        227,
+        209,
+        29,
+        164,
+        111,
+        166,
+        41
+      ],
+      "accounts": [
+        {
+          "name": "gameConfig",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  113,
+                  117,
+                  101,
+                  115,
+                  116,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "minQuestInterval",
+          "type": "i64"
+        }
+      ]
     },
     {
       "name": "setRewardConfig",
@@ -260,6 +411,60 @@ export type NaraQuest = {
         {
           "name": "maxRewardCount",
           "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "setRewardPerShare",
+      "discriminator": [
+        163,
+        41,
+        94,
+        29,
+        221,
+        56,
+        112,
+        60
+      ],
+      "accounts": [
+        {
+          "name": "gameConfig",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  113,
+                  117,
+                  101,
+                  115,
+                  116,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "rewardPerShare",
+          "type": "u64"
+        },
+        {
+          "name": "extraReward",
+          "type": "u64"
         }
       ]
     },
@@ -1255,6 +1460,21 @@ export type NaraQuest = {
       "code": 6012,
       "name": "insufficientStake",
       "msg": "Stake does not meet dynamic requirement"
+    },
+    {
+      "code": 6013,
+      "name": "questIntervalTooShort",
+      "msg": "Quest interval too short"
+    },
+    {
+      "code": 6014,
+      "name": "insufficientTreasury",
+      "msg": "Insufficient treasury balance"
+    },
+    {
+      "code": 6015,
+      "name": "invalidRewardPerShare",
+      "msg": "Invalid reward config: reward_per_share and extra_reward cannot both be 0"
     }
   ],
   "types": [
@@ -1318,6 +1538,26 @@ export type NaraQuest = {
           {
             "name": "decayMs",
             "type": "i64"
+          },
+          {
+            "name": "treasury",
+            "type": "pubkey"
+          },
+          {
+            "name": "questAuthority",
+            "type": "pubkey"
+          },
+          {
+            "name": "minQuestInterval",
+            "type": "i64"
+          },
+          {
+            "name": "rewardPerShare",
+            "type": "u64"
+          },
+          {
+            "name": "extraReward",
+            "type": "u64"
           },
           {
             "name": "padding",

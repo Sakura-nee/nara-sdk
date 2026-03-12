@@ -351,7 +351,7 @@ async function main() {
   console.log("\n--- Querying program config ---");
   const config = await getAgentRegistryConfig(connection);
   console.log("  Admin:", config.admin.toBase58());
-  console.log("  Fee recipient:", config.feeRecipient.toBase58());
+  console.log("  Fee vault:", config.feeVault.toBase58());
   console.log("  Point mint:", config.pointMint.toBase58());
   console.log("  Referee mint:", config.refereeMint.toBase58());
   console.log("  Referee activity mint:", config.refereeActivityMint.toBase58());

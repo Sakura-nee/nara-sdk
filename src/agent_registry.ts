@@ -311,7 +311,7 @@ export async function getConfig(
   options?: AgentRegistryOptions
 ): Promise<{
   admin: PublicKey;
-  feeRecipient: PublicKey;
+  feeVault: PublicKey;
   pointMint: PublicKey;
   refereeMint: PublicKey;
   refereeActivityMint: PublicKey;
@@ -333,7 +333,7 @@ export async function getConfig(
   const buf = Buffer.from(accountInfo.data);
   let offset = 8; // skip discriminator
   const admin = new PublicKey(buf.subarray(offset, offset + 32)); offset += 32;
-  const feeRecipient = new PublicKey(buf.subarray(offset, offset + 32)); offset += 32;
+  const feeVault = new PublicKey(buf.subarray(offset, offset + 32)); offset += 32;
   const pointMint = new PublicKey(buf.subarray(offset, offset + 32)); offset += 32;
   const refereeMint = new PublicKey(buf.subarray(offset, offset + 32)); offset += 32;
   const refereeActivityMint = new PublicKey(buf.subarray(offset, offset + 32)); offset += 32;
@@ -345,7 +345,7 @@ export async function getConfig(
   const referralRegisterPoints = Number(buf.readBigUInt64LE(offset)); offset += 8;
   const activityReward = Number(buf.readBigUInt64LE(offset)); offset += 8;
   const referralActivityReward = Number(buf.readBigUInt64LE(offset));
-  return { admin, feeRecipient, pointMint, refereeMint, refereeActivityMint, registerFee, pointsSelf, pointsReferral, referralRegisterFee, referralFeeShare, referralRegisterPoints, activityReward, referralActivityReward };
+  return { admin, feeVault, pointMint, refereeMint, refereeActivityMint, registerFee, pointsSelf, pointsReferral, referralRegisterFee, referralFeeShare, referralRegisterPoints, activityReward, referralActivityReward };
 }
 
 // ─── Agent CRUD ─────────────────────────────────────────────────
@@ -363,13 +363,11 @@ export async function registerAgent(
     throw new Error(`Agent ID must not contain uppercase letters: "${agentId}"`);
   }
   const program = createProgram(connection, wallet, options?.programId);
-  const config = await getConfig(connection, options);
 
   const ix = await program.methods
     .registerAgent(agentId)
     .accounts({
       authority: wallet.publicKey,
-      feeRecipient: config.feeRecipient,
     } as any)
     .instruction();
   const signature = await sendTx(connection, wallet, [ix]);
@@ -393,7 +391,6 @@ export async function registerAgentWithReferral(
     throw new Error(`Agent ID must not contain uppercase letters: "${agentId}"`);
   }
   const program = createProgram(connection, wallet, options?.programId);
-  const config = await getConfig(connection, options);
   const pointMint = getPointMintPda(program.programId);
 
   const { referralAgent, referralAuthority, referralPointAccount } =
@@ -408,7 +405,6 @@ export async function registerAgentWithReferral(
     .registerAgentWithReferral(agentId)
     .accounts({
       authority: wallet.publicKey,
-      feeRecipient: config.feeRecipient,
       referralAgent,
       referralAuthority,
       referralPointAccount,
@@ -880,17 +876,18 @@ export async function updateAdmin(
 }
 
 /**
- * Update the fee recipient (admin-only).
+ * Withdraw accumulated fees from the fee vault (admin-only).
  */
-export async function updateFeeRecipient(
+export async function withdrawFees(
   connection: Connection,
   wallet: Keypair,
-  newRecipient: PublicKey,
+  amount: number | anchor.BN,
   options?: AgentRegistryOptions
 ): Promise<string> {
   const program = createProgram(connection, wallet, options?.programId);
+  const amt = typeof amount === "number" ? new anchor.BN(amount) : amount;
   const ix = await program.methods
-    .updateFeeRecipient(newRecipient)
+    .withdrawFees(amt)
     .accounts({ admin: wallet.publicKey } as any)
     .instruction();
   return sendTx(connection, wallet, [ix]);
