@@ -52,6 +52,20 @@ export interface AgentInfo {
   metadata: string | null;
 }
 
+export interface AgentTwitterInfo {
+  status: number;
+  verifiedAt: number;
+  username: string;
+  tweetUrl: string;
+}
+
+export interface TweetVerifyInfo {
+  status: number;
+  submittedAt: number;
+  lastRewardedAt: number;
+  tweetUrl: string;
+}
+
 export type MemoryMode = "new" | "update" | "append" | "auto";
 
 export interface AgentRegistryOptions {
@@ -142,6 +156,38 @@ function getRefereeMintPda(programId: PublicKey): PublicKey {
 function getRefereeActivityMintPda(programId: PublicKey): PublicKey {
   const [pda] = PublicKey.findProgramAddressSync(
     [Buffer.from("referee_activity_mint")],
+    programId
+  );
+  return pda;
+}
+
+function getTreasuryPda(programId: PublicKey): PublicKey {
+  const [pda] = PublicKey.findProgramAddressSync(
+    [Buffer.from("treasury")],
+    programId
+  );
+  return pda;
+}
+
+function getTwitterPda(programId: PublicKey, agentPda: PublicKey): PublicKey {
+  const [pda] = PublicKey.findProgramAddressSync(
+    [Buffer.from("twitter"), agentPda.toBuffer()],
+    programId
+  );
+  return pda;
+}
+
+function getTweetVerifyPda(programId: PublicKey, agentPda: PublicKey): PublicKey {
+  const [pda] = PublicKey.findProgramAddressSync(
+    [Buffer.from("tweet_verify"), agentPda.toBuffer()],
+    programId
+  );
+  return pda;
+}
+
+function getTwitterHandlePda(programId: PublicKey, username: string): PublicKey {
+  const [pda] = PublicKey.findProgramAddressSync(
+    [Buffer.from("twitter_handle"), Buffer.from(username)],
     programId
   );
   return pda;
@@ -323,6 +369,12 @@ export async function getConfig(
   referralRegisterPoints: number;
   activityReward: number;
   referralActivityReward: number;
+  twitterVerifier: PublicKey;
+  twitterVerificationFee: number;
+  twitterVerificationReward: number;
+  twitterVerificationPoints: number;
+  tweetVerifyReward: number;
+  tweetVerifyPoints: number;
 }> {
   const pid = new PublicKey(options?.programId ?? DEFAULT_AGENT_REGISTRY_PROGRAM_ID);
   const configPda = getConfigPda(pid);
@@ -344,8 +396,14 @@ export async function getConfig(
   const referralFeeShare = Number(buf.readBigUInt64LE(offset)); offset += 8;
   const referralRegisterPoints = Number(buf.readBigUInt64LE(offset)); offset += 8;
   const activityReward = Number(buf.readBigUInt64LE(offset)); offset += 8;
-  const referralActivityReward = Number(buf.readBigUInt64LE(offset));
-  return { admin, feeVault, pointMint, refereeMint, refereeActivityMint, registerFee, pointsSelf, pointsReferral, referralRegisterFee, referralFeeShare, referralRegisterPoints, activityReward, referralActivityReward };
+  const referralActivityReward = Number(buf.readBigUInt64LE(offset)); offset += 8;
+  const twitterVerifier = new PublicKey(buf.subarray(offset, offset + 32)); offset += 32;
+  const twitterVerificationFee = Number(buf.readBigUInt64LE(offset)); offset += 8;
+  const twitterVerificationReward = Number(buf.readBigUInt64LE(offset)); offset += 8;
+  const twitterVerificationPoints = Number(buf.readBigUInt64LE(offset)); offset += 8;
+  const tweetVerifyReward = Number(buf.readBigUInt64LE(offset)); offset += 8;
+  const tweetVerifyPoints = Number(buf.readBigUInt64LE(offset));
+  return { admin, feeVault, pointMint, refereeMint, refereeActivityMint, registerFee, pointsSelf, pointsReferral, referralRegisterFee, referralFeeShare, referralRegisterPoints, activityReward, referralActivityReward, twitterVerifier, twitterVerificationFee, twitterVerificationReward, twitterVerificationPoints, tweetVerifyReward, tweetVerifyPoints };
 }
 
 // ─── Agent CRUD ─────────────────────────────────────────────────
@@ -975,6 +1033,322 @@ export async function updateActivityConfig(
   const ix = await program.methods
     .updateActivityConfig(ar, rar)
     .accounts({ admin: wallet.publicKey } as any)
+    .instruction();
+  return sendTx(connection, wallet, [ix]);
+}
+
+/**
+ * Expand the config account size (admin-only).
+ */
+export async function expandConfig(
+  connection: Connection,
+  wallet: Keypair,
+  extendSize: number | anchor.BN,
+  options?: AgentRegistryOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  const size = typeof extendSize === "number" ? new anchor.BN(extendSize) : extendSize;
+  const ix = await program.methods
+    .expandConfig(size)
+    .accounts({ admin: wallet.publicKey } as any)
+    .instruction();
+  return sendTx(connection, wallet, [ix]);
+}
+
+/**
+ * Update the twitter verifier address (admin-only).
+ */
+export async function updateTwitterVerifier(
+  connection: Connection,
+  wallet: Keypair,
+  newVerifier: PublicKey,
+  options?: AgentRegistryOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  const ix = await program.methods
+    .updateTwitterVerifier(newVerifier)
+    .accounts({ admin: wallet.publicKey } as any)
+    .instruction();
+  return sendTx(connection, wallet, [ix]);
+}
+
+/**
+ * Update the twitter verification config (admin-only).
+ * @param fee - Verification fee in lamports
+ * @param reward - Reward for verified twitter in lamports
+ * @param points - Points awarded for twitter verification
+ */
+export async function updateTwitterVerificationConfig(
+  connection: Connection,
+  wallet: Keypair,
+  fee: number | anchor.BN,
+  reward: number | anchor.BN,
+  points: number | anchor.BN,
+  options?: AgentRegistryOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  const f = typeof fee === "number" ? new anchor.BN(fee) : fee;
+  const r = typeof reward === "number" ? new anchor.BN(reward) : reward;
+  const p = typeof points === "number" ? new anchor.BN(points) : points;
+  const ix = await program.methods
+    .updateTwitterVerificationConfig(f, r, p)
+    .accounts({ admin: wallet.publicKey } as any)
+    .instruction();
+  return sendTx(connection, wallet, [ix]);
+}
+
+/**
+ * Update the tweet verify config (admin-only).
+ * @param reward - Reward for verified tweet in lamports
+ * @param points - Points awarded for tweet verification
+ */
+export async function updateTweetVerifyConfig(
+  connection: Connection,
+  wallet: Keypair,
+  reward: number | anchor.BN,
+  points: number | anchor.BN,
+  options?: AgentRegistryOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  const r = typeof reward === "number" ? new anchor.BN(reward) : reward;
+  const p = typeof points === "number" ? new anchor.BN(points) : points;
+  const ix = await program.methods
+    .updateTweetVerifyConfig(r, p)
+    .accounts({ admin: wallet.publicKey } as any)
+    .instruction();
+  return sendTx(connection, wallet, [ix]);
+}
+
+/**
+ * Withdraw accumulated twitter verification fees (admin-only).
+ */
+export async function withdrawTwitterVerifyFees(
+  connection: Connection,
+  wallet: Keypair,
+  amount: number | anchor.BN,
+  options?: AgentRegistryOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  const amt = typeof amount === "number" ? new anchor.BN(amount) : amount;
+  const ix = await program.methods
+    .withdrawTwitterVerifyFees(amt)
+    .accounts({ admin: wallet.publicKey } as any)
+    .instruction();
+  return sendTx(connection, wallet, [ix]);
+}
+
+// ─── Twitter Verification ───────────────────────────────────────
+
+/**
+ * Read an agent's twitter verification state.
+ * Returns null if no twitter account exists.
+ */
+export async function getAgentTwitter(
+  connection: Connection,
+  agentId: string,
+  options?: AgentRegistryOptions
+): Promise<AgentTwitterInfo | null> {
+  const pid = new PublicKey(options?.programId ?? DEFAULT_AGENT_REGISTRY_PROGRAM_ID);
+  const agentPda = getAgentPda(pid, agentId);
+  const twitterPda = getTwitterPda(pid, agentPda);
+  const accountInfo = await connection.getAccountInfo(twitterPda);
+  if (!accountInfo) return null;
+
+  const buf = Buffer.from(accountInfo.data);
+  let offset = 8; // skip discriminator
+  const status = Number(buf.readBigUInt64LE(offset)); offset += 8;
+  const verifiedAt = Number(buf.readBigInt64LE(offset)); offset += 8;
+  const usernameLen = Number(buf.readBigUInt64LE(offset)); offset += 8;
+  const tweetUrlLen = Number(buf.readBigUInt64LE(offset)); offset += 8;
+  const username = buf.subarray(offset, offset + usernameLen).toString("utf-8"); offset += 32;
+  const tweetUrl = buf.subarray(offset, offset + tweetUrlLen).toString("utf-8");
+
+  return { status, verifiedAt, username, tweetUrl };
+}
+
+/**
+ * Read an agent's tweet verify state.
+ * Returns null if no tweet verify account exists.
+ */
+export async function getTweetVerify(
+  connection: Connection,
+  agentId: string,
+  options?: AgentRegistryOptions
+): Promise<TweetVerifyInfo | null> {
+  const pid = new PublicKey(options?.programId ?? DEFAULT_AGENT_REGISTRY_PROGRAM_ID);
+  const agentPda = getAgentPda(pid, agentId);
+  const tweetVerifyPda = getTweetVerifyPda(pid, agentPda);
+  const accountInfo = await connection.getAccountInfo(tweetVerifyPda);
+  if (!accountInfo) return null;
+
+  const buf = Buffer.from(accountInfo.data);
+  let offset = 8;
+  const status = Number(buf.readBigUInt64LE(offset)); offset += 8;
+  const submittedAt = Number(buf.readBigInt64LE(offset)); offset += 8;
+  const lastRewardedAt = Number(buf.readBigInt64LE(offset)); offset += 8;
+  const tweetUrlLen = Number(buf.readBigUInt64LE(offset)); offset += 8;
+  const tweetUrl = buf.subarray(offset, offset + tweetUrlLen).toString("utf-8");
+
+  return { status, submittedAt, lastRewardedAt, tweetUrl };
+}
+
+/**
+ * Set twitter info for an agent and submit for verification.
+ * Charges the twitter verification fee.
+ */
+export async function setTwitter(
+  connection: Connection,
+  wallet: Keypair,
+  agentId: string,
+  username: string,
+  tweetUrl: string,
+  options?: AgentRegistryOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  const ix = await program.methods
+    .setTwitter(agentId, username, tweetUrl)
+    .accounts({ authority: wallet.publicKey } as any)
+    .instruction();
+  return sendTx(connection, wallet, [ix]);
+}
+
+/**
+ * Submit a tweet for verification (agent owner).
+ * Charges the twitter verification fee.
+ */
+export async function submitTweet(
+  connection: Connection,
+  wallet: Keypair,
+  agentId: string,
+  username: string,
+  tweetUrl: string,
+  options?: AgentRegistryOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  const ix = await program.methods
+    .submitTweet(agentId, username, tweetUrl)
+    .accounts({ authority: wallet.publicKey } as any)
+    .instruction();
+  return sendTx(connection, wallet, [ix]);
+}
+
+/**
+ * Unbind twitter from an agent (agent owner).
+ */
+export async function unbindTwitter(
+  connection: Connection,
+  wallet: Keypair,
+  agentId: string,
+  username: string,
+  options?: AgentRegistryOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  const ix = await program.methods
+    .unbindTwitter(agentId, username)
+    .accounts({ authority: wallet.publicKey } as any)
+    .instruction();
+  return sendTx(connection, wallet, [ix]);
+}
+
+/**
+ * Verify an agent's twitter (verifier-only).
+ * Awards verification reward and points to the agent owner.
+ */
+export async function verifyTwitter(
+  connection: Connection,
+  wallet: Keypair,
+  agentId: string,
+  username: string,
+  options?: AgentRegistryOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  const agentPda = getAgentPda(program.programId, agentId);
+
+  // Resolve agent authority for reward distribution
+  const accountInfo = await connection.getAccountInfo(agentPda);
+  if (!accountInfo) throw new Error(`Agent "${agentId}" not found`);
+  const authority = new PublicKey(accountInfo.data.subarray(8, 40));
+
+  const pointMint = getPointMintPda(program.programId);
+  const authorityPointAccount = getAssociatedTokenAddressSync(
+    pointMint, authority, true, TOKEN_2022_PROGRAM_ID
+  );
+
+  const ix = await program.methods
+    .verifyTwitter(agentId, username)
+    .accounts({
+      verifier: wallet.publicKey,
+      authority,
+      authorityPointAccount,
+    } as any)
+    .instruction();
+  return sendTx(connection, wallet, [ix]);
+}
+
+/**
+ * Reject an agent's twitter verification (verifier-only).
+ */
+export async function rejectTwitter(
+  connection: Connection,
+  wallet: Keypair,
+  agentId: string,
+  options?: AgentRegistryOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  const ix = await program.methods
+    .rejectTwitter(agentId)
+    .accounts({ verifier: wallet.publicKey } as any)
+    .instruction();
+  return sendTx(connection, wallet, [ix]);
+}
+
+/**
+ * Approve a tweet verification (verifier-only).
+ * Awards tweet verify reward and points to the agent owner.
+ */
+export async function approveTweet(
+  connection: Connection,
+  wallet: Keypair,
+  agentId: string,
+  options?: AgentRegistryOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  const agentPda = getAgentPda(program.programId, agentId);
+
+  // Resolve agent authority for reward distribution
+  const accountInfo = await connection.getAccountInfo(agentPda);
+  if (!accountInfo) throw new Error(`Agent "${agentId}" not found`);
+  const authority = new PublicKey(accountInfo.data.subarray(8, 40));
+
+  const pointMint = getPointMintPda(program.programId);
+  const authorityPointAccount = getAssociatedTokenAddressSync(
+    pointMint, authority, true, TOKEN_2022_PROGRAM_ID
+  );
+
+  const ix = await program.methods
+    .approveTweet(agentId)
+    .accounts({
+      verifier: wallet.publicKey,
+      authority,
+      authorityPointAccount,
+    } as any)
+    .instruction();
+  return sendTx(connection, wallet, [ix]);
+}
+
+/**
+ * Reject a tweet verification (verifier-only).
+ */
+export async function rejectTweet(
+  connection: Connection,
+  wallet: Keypair,
+  agentId: string,
+  options?: AgentRegistryOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  const ix = await program.methods
+    .rejectTweet(agentId)
+    .accounts({ verifier: wallet.publicKey } as any)
     .instruction();
   return sendTx(connection, wallet, [ix]);
 }

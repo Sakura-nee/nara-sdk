@@ -14,6 +14,307 @@ export type NaraAgentRegistry = {
   },
   "instructions": [
     {
+      "name": "approveTweet",
+      "discriminator": [
+        57,
+        71,
+        49,
+        146,
+        108,
+        84,
+        107,
+        45
+      ],
+      "accounts": [
+        {
+          "name": "verifier",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "agent",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "agentId"
+              }
+            ]
+          }
+        },
+        {
+          "name": "tweetVerify",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  101,
+                  101,
+                  116,
+                  95,
+                  118,
+                  101,
+                  114,
+                  105,
+                  102,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "agent"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true
+        },
+        {
+          "name": "twitterVerifyVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114,
+                  95,
+                  118,
+                  101,
+                  114,
+                  105,
+                  102,
+                  121,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pointMint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  105,
+                  110,
+                  116,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "mintAuthority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authorityPointAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "account",
+                "path": "tokenProgram"
+              },
+              {
+                "kind": "account",
+                "path": "pointMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "tweetVerifyQueue",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  101,
+                  101,
+                  116,
+                  95,
+                  118,
+                  101,
+                  114,
+                  105,
+                  102,
+                  121,
+                  95,
+                  113,
+                  117,
+                  101,
+                  117,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "agentId",
+          "type": "string"
+        }
+      ]
+    },
+    {
       "name": "closeBuffer",
       "discriminator": [
         46,
@@ -161,6 +462,55 @@ export type NaraAgentRegistry = {
         {
           "name": "agentId",
           "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "expandConfig",
+      "discriminator": [
+        120,
+        201,
+        195,
+        128,
+        35,
+        202,
+        73,
+        161
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "extendSize",
+          "type": "u64"
         }
       ]
     },
@@ -1574,6 +1924,254 @@ export type NaraAgentRegistry = {
       ]
     },
     {
+      "name": "rejectTweet",
+      "discriminator": [
+        231,
+        64,
+        127,
+        185,
+        55,
+        253,
+        175,
+        30
+      ],
+      "accounts": [
+        {
+          "name": "verifier",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "agent",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "agentId"
+              }
+            ]
+          }
+        },
+        {
+          "name": "tweetVerify",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  101,
+                  101,
+                  116,
+                  95,
+                  118,
+                  101,
+                  114,
+                  105,
+                  102,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "agent"
+              }
+            ]
+          }
+        },
+        {
+          "name": "tweetVerifyQueue",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  101,
+                  101,
+                  116,
+                  95,
+                  118,
+                  101,
+                  114,
+                  105,
+                  102,
+                  121,
+                  95,
+                  113,
+                  117,
+                  101,
+                  117,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "agentId",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "rejectTwitter",
+      "discriminator": [
+        97,
+        238,
+        35,
+        162,
+        61,
+        92,
+        88,
+        183
+      ],
+      "accounts": [
+        {
+          "name": "verifier",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "agent",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "agentId"
+              }
+            ]
+          }
+        },
+        {
+          "name": "twitter",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "agent"
+              }
+            ]
+          }
+        },
+        {
+          "name": "twitterQueue",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114,
+                  95,
+                  113,
+                  117,
+                  101,
+                  117,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "agentId",
+          "type": "string"
+        }
+      ]
+    },
+    {
       "name": "setBio",
       "discriminator": [
         196,
@@ -1874,6 +2472,365 @@ export type NaraAgentRegistry = {
       ]
     },
     {
+      "name": "setTwitter",
+      "discriminator": [
+        136,
+        238,
+        98,
+        223,
+        118,
+        178,
+        238,
+        183
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "agent"
+          ]
+        },
+        {
+          "name": "agent",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "agentId"
+              }
+            ]
+          }
+        },
+        {
+          "name": "twitter",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "agent"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "twitterVerifyVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114,
+                  95,
+                  118,
+                  101,
+                  114,
+                  105,
+                  102,
+                  121,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "twitterQueue",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114,
+                  95,
+                  113,
+                  117,
+                  101,
+                  117,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "agentId",
+          "type": "string"
+        },
+        {
+          "name": "username",
+          "type": "string"
+        },
+        {
+          "name": "tweetUrl",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "submitTweet",
+      "discriminator": [
+        140,
+        200,
+        213,
+        38,
+        145,
+        255,
+        191,
+        254
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "agent"
+          ]
+        },
+        {
+          "name": "agent",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "agentId"
+              }
+            ]
+          }
+        },
+        {
+          "name": "twitter",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "agent"
+              }
+            ]
+          }
+        },
+        {
+          "name": "tweetVerify",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  101,
+                  101,
+                  116,
+                  95,
+                  118,
+                  101,
+                  114,
+                  105,
+                  102,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "agent"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "twitterVerifyVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114,
+                  95,
+                  118,
+                  101,
+                  114,
+                  105,
+                  102,
+                  121,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "tweetVerifyQueue",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  101,
+                  101,
+                  116,
+                  95,
+                  118,
+                  101,
+                  114,
+                  105,
+                  102,
+                  121,
+                  95,
+                  113,
+                  117,
+                  101,
+                  117,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "agentId",
+          "type": "string"
+        },
+        {
+          "name": "username",
+          "type": "string"
+        },
+        {
+          "name": "tweetUrl",
+          "type": "string"
+        }
+      ]
+    },
+    {
       "name": "transferAuthority",
       "discriminator": [
         48,
@@ -1924,6 +2881,170 @@ export type NaraAgentRegistry = {
         {
           "name": "newAuthority",
           "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "unbindTwitter",
+      "discriminator": [
+        93,
+        66,
+        28,
+        60,
+        27,
+        34,
+        252,
+        166
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "agent"
+          ]
+        },
+        {
+          "name": "agent",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "agentId"
+              }
+            ]
+          }
+        },
+        {
+          "name": "twitter",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "agent"
+              }
+            ]
+          }
+        },
+        {
+          "name": "twitterHandle",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114,
+                  95,
+                  104,
+                  97,
+                  110,
+                  100,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "username"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "twitterVerifyVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114,
+                  95,
+                  118,
+                  101,
+                  114,
+                  105,
+                  102,
+                  121,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "agentId",
+          "type": "string"
+        },
+        {
+          "name": "username",
+          "type": "string"
         }
       ]
     },
@@ -2179,6 +3300,485 @@ export type NaraAgentRegistry = {
       ]
     },
     {
+      "name": "updateTweetVerifyConfig",
+      "discriminator": [
+        16,
+        173,
+        44,
+        208,
+        249,
+        61,
+        172,
+        152
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "reward",
+          "type": "u64"
+        },
+        {
+          "name": "points",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "updateTwitterVerificationConfig",
+      "discriminator": [
+        74,
+        177,
+        105,
+        71,
+        46,
+        192,
+        112,
+        135
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "fee",
+          "type": "u64"
+        },
+        {
+          "name": "reward",
+          "type": "u64"
+        },
+        {
+          "name": "points",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "updateTwitterVerifier",
+      "discriminator": [
+        81,
+        250,
+        176,
+        204,
+        250,
+        169,
+        146,
+        144
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "newVerifier",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "verifyTwitter",
+      "discriminator": [
+        170,
+        213,
+        202,
+        134,
+        247,
+        139,
+        15,
+        24
+      ],
+      "accounts": [
+        {
+          "name": "verifier",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "agent",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "agentId"
+              }
+            ]
+          }
+        },
+        {
+          "name": "twitter",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "agent"
+              }
+            ]
+          }
+        },
+        {
+          "name": "twitterHandle",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114,
+                  95,
+                  104,
+                  97,
+                  110,
+                  100,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "username"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true
+        },
+        {
+          "name": "twitterVerifyVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114,
+                  95,
+                  118,
+                  101,
+                  114,
+                  105,
+                  102,
+                  121,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pointMint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  105,
+                  110,
+                  116,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "mintAuthority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authorityPointAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "account",
+                "path": "tokenProgram"
+              },
+              {
+                "kind": "account",
+                "path": "pointMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "twitterQueue",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114,
+                  95,
+                  113,
+                  117,
+                  101,
+                  117,
+                  101
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "agentId",
+          "type": "string"
+        },
+        {
+          "name": "username",
+          "type": "string"
+        }
+      ]
+    },
+    {
       "name": "withdrawFees",
       "discriminator": [
         198,
@@ -2228,6 +3828,90 @@ export type NaraAgentRegistry = {
                   102,
                   101,
                   101,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "withdrawTwitterVerifyFees",
+      "discriminator": [
+        64,
+        212,
+        105,
+        60,
+        34,
+        93,
+        221,
+        176
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "twitterVerifyVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114,
+                  95,
+                  118,
+                  101,
+                  114,
+                  105,
+                  102,
+                  121,
                   95,
                   118,
                   97,
@@ -2328,6 +4012,19 @@ export type NaraAgentRegistry = {
       ]
     },
     {
+      "name": "agentTwitter",
+      "discriminator": [
+        71,
+        53,
+        221,
+        107,
+        16,
+        244,
+        30,
+        181
+      ]
+    },
+    {
       "name": "memoryBuffer",
       "discriminator": [
         58,
@@ -2351,6 +4048,32 @@ export type NaraAgentRegistry = {
         149,
         140,
         63
+      ]
+    },
+    {
+      "name": "tweetVerify",
+      "discriminator": [
+        6,
+        26,
+        187,
+        54,
+        43,
+        97,
+        119,
+        79
+      ]
+    },
+    {
+      "name": "twitterHandle",
+      "discriminator": [
+        146,
+        117,
+        11,
+        222,
+        176,
+        213,
+        252,
+        249
       ]
     }
   ],
@@ -2514,6 +4237,76 @@ export type NaraAgentRegistry = {
       "code": 6028,
       "name": "selfReferral",
       "msg": "Cannot set self as referral"
+    },
+    {
+      "code": 6029,
+      "name": "twitterVerifierNotSet",
+      "msg": "Twitter verifier not configured"
+    },
+    {
+      "code": 6030,
+      "name": "notTwitterVerifier",
+      "msg": "Unauthorized: not the twitter verifier"
+    },
+    {
+      "code": 6031,
+      "name": "twitterUsernameTooLong",
+      "msg": "Twitter username too long"
+    },
+    {
+      "code": 6032,
+      "name": "twitterUsernameEmpty",
+      "msg": "Twitter username is empty"
+    },
+    {
+      "code": 6033,
+      "name": "tweetUrlTooLong",
+      "msg": "Tweet URL too long"
+    },
+    {
+      "code": 6034,
+      "name": "tweetUrlEmpty",
+      "msg": "Tweet URL is empty"
+    },
+    {
+      "code": 6035,
+      "name": "twitterNotPending",
+      "msg": "Twitter account is not in pending status"
+    },
+    {
+      "code": 6036,
+      "name": "twitterNotVerified",
+      "msg": "Twitter account is not in verified status"
+    },
+    {
+      "code": 6037,
+      "name": "twitterHandleAlreadyBound",
+      "msg": "Twitter handle already bound to another agent"
+    },
+    {
+      "code": 6038,
+      "name": "insufficientTwitterVerifyVaultBalance",
+      "msg": "Twitter verify vault has insufficient balance"
+    },
+    {
+      "code": 6039,
+      "name": "tweetVerifyCooldown",
+      "msg": "Tweet verification is in cooldown period"
+    },
+    {
+      "code": 6040,
+      "name": "tweetVerifyNotPending",
+      "msg": "Tweet verification is not in pending status"
+    },
+    {
+      "code": 6041,
+      "name": "tweetVerifyAlreadyPending",
+      "msg": "Tweet verification already pending"
+    },
+    {
+      "code": 6042,
+      "name": "twitterUsernameMismatch",
+      "msg": "Twitter username does not match verified account"
     }
   ],
   "types": [
@@ -2640,6 +4433,61 @@ export type NaraAgentRegistry = {
       }
     },
     {
+      "name": "agentTwitter",
+      "serialization": "bytemuck",
+      "repr": {
+        "kind": "c"
+      },
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "status",
+            "type": "u64"
+          },
+          {
+            "name": "verifiedAt",
+            "type": "i64"
+          },
+          {
+            "name": "usernameLen",
+            "type": "u64"
+          },
+          {
+            "name": "tweetUrlLen",
+            "type": "u64"
+          },
+          {
+            "name": "username",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "tweetUrl",
+            "type": {
+              "array": [
+                "u8",
+                256
+              ]
+            }
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                64
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "memoryBuffer",
       "docs": [
         "Client-created zero-copy account for chunked uploads.",
@@ -2744,6 +4592,138 @@ export type NaraAgentRegistry = {
           {
             "name": "referralActivityReward",
             "type": "u64"
+          },
+          {
+            "name": "twitterVerifier",
+            "type": "pubkey"
+          },
+          {
+            "name": "twitterVerificationFee",
+            "type": "u64"
+          },
+          {
+            "name": "twitterVerificationReward",
+            "type": "u64"
+          },
+          {
+            "name": "twitterVerificationPoints",
+            "type": "u64"
+          },
+          {
+            "name": "tweetVerifyReward",
+            "type": "u64"
+          },
+          {
+            "name": "tweetVerifyPoints",
+            "type": "u64"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                128
+              ]
+            }
+          },
+          {
+            "name": "reserved2",
+            "type": {
+              "array": [
+                "u8",
+                96
+              ]
+            }
+          },
+          {
+            "name": "reserved3",
+            "type": {
+              "array": [
+                "u8",
+                24
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "tweetVerify",
+      "docs": [
+        "Per-agent tweet verification state.",
+        "Seeds: [SEED_TWEET_VERIFY, agent_pda.as_ref()]"
+      ],
+      "serialization": "bytemuck",
+      "repr": {
+        "kind": "c"
+      },
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "status",
+            "docs": [
+              "0 = Idle, 1 = Pending"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "submittedAt",
+            "docs": [
+              "Unix timestamp when the tweet was submitted"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "lastRewardedAt",
+            "docs": [
+              "Unix timestamp of the last successful reward (for cooldown)"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "tweetUrlLen",
+            "docs": [
+              "Actual byte length of tweet_url"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "tweetUrl",
+            "docs": [
+              "Tweet URL (max 256 bytes)"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                256
+              ]
+            }
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                64
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "twitterHandle",
+      "serialization": "bytemuck",
+      "repr": {
+        "kind": "c"
+      },
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "agent",
+            "type": "pubkey"
           },
           {
             "name": "reserved",
