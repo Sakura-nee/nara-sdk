@@ -896,6 +896,24 @@ export async function setStakeAuthority(
 }
 
 /**
+ * Build an adjustFreeStake instruction without sending it.
+ */
+export async function makeAdjustFreeStakeIx(
+  connection: Connection,
+  caller: PublicKey,
+  user: PublicKey,
+  delta: number,
+  reason: string,
+  options?: QuestOptions
+) {
+  const program = createProgram(connection, Keypair.generate(), options?.programId);
+  return program.methods
+    .adjustFreeStake(delta, reason)
+    .accounts({ user, caller } as any)
+    .instruction();
+}
+
+/**
  * Adjust free stake credits for a user (stake_authority or authority only).
  * @param user - The user whose free credits to adjust
  * @param delta - Amount to adjust (positive to add, negative to remove)
@@ -909,10 +927,6 @@ export async function adjustFreeStake(
   reason: string,
   options?: QuestOptions
 ): Promise<string> {
-  const program = createProgram(connection, wallet, options?.programId);
-  const ix = await program.methods
-    .adjustFreeStake(delta, reason)
-    .accounts({ user, caller: wallet.publicKey } as any)
-    .instruction();
+  const ix = await makeAdjustFreeStakeIx(connection, wallet.publicKey, user, delta, reason, options);
   return sendTx(connection, wallet, [ix]);
 }

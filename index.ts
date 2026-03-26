@@ -45,6 +45,7 @@ export {
   setQuestInterval,
   setRewardPerShare,
   setStakeAuthority,
+  makeAdjustFreeStakeIx,
   adjustFreeStake,
   getQuestConfig,
   type QuestInfo,

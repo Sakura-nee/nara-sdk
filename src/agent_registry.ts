@@ -1362,13 +1362,15 @@ export async function unbindTwitter(
 /**
  * Verify an agent's twitter (verifier-only).
  * Awards verification reward and points to the agent owner.
+ * @param freeStakeDelta - If provided, also adjusts free stake credits for the agent owner in the same tx.
  */
 export async function verifyTwitter(
   connection: Connection,
   wallet: Keypair,
   agentId: string,
   username: string,
-  options?: AgentRegistryOptions
+  options?: AgentRegistryOptions,
+  freeStakeDelta?: number
 ): Promise<string> {
   const program = createProgram(connection, wallet, options?.programId);
   const agentPda = getAgentPda(program.programId, agentId);
@@ -1391,7 +1393,17 @@ export async function verifyTwitter(
       authorityPointAccount,
     } as any)
     .instruction();
-  return sendTx(connection, wallet, [ix]);
+
+  const ixs = [ix];
+  if (freeStakeDelta !== undefined && freeStakeDelta !== 0) {
+    const { makeAdjustFreeStakeIx } = await import("./quest");
+    const freeStakeIx = await makeAdjustFreeStakeIx(
+      connection, wallet.publicKey, authority, freeStakeDelta, `twitter_verify:${agentId}`
+    );
+    ixs.push(freeStakeIx);
+  }
+
+  return sendTx(connection, wallet, ixs);
 }
 
 /**
@@ -1414,12 +1426,14 @@ export async function rejectTwitter(
 /**
  * Approve a tweet verification (verifier-only).
  * Awards tweet verify reward and points to the agent owner.
+ * @param freeStakeDelta - If provided, also adjusts free stake credits for the agent owner in the same tx.
  */
 export async function approveTweet(
   connection: Connection,
   wallet: Keypair,
   agentId: string,
-  options?: AgentRegistryOptions
+  options?: AgentRegistryOptions,
+  freeStakeDelta?: number
 ): Promise<string> {
   const program = createProgram(connection, wallet, options?.programId);
   const agentPda = getAgentPda(program.programId, agentId);
@@ -1442,7 +1456,17 @@ export async function approveTweet(
       authorityPointAccount,
     } as any)
     .instruction();
-  return sendTx(connection, wallet, [ix]);
+
+  const ixs = [ix];
+  if (freeStakeDelta !== undefined && freeStakeDelta !== 0) {
+    const { makeAdjustFreeStakeIx } = await import("./quest");
+    const freeStakeIx = await makeAdjustFreeStakeIx(
+      connection, wallet.publicKey, authority, freeStakeDelta, `tweet_verify:${agentId}`
+    );
+    ixs.push(freeStakeIx);
+  }
+
+  return sendTx(connection, wallet, ixs);
 }
 
 /**
