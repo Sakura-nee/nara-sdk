@@ -125,6 +125,8 @@ export {
   // Twitter verification
   getAgentTwitter,
   getTweetVerify,
+  getPendingTwitterVerifications,
+  getPendingTweetVerifications,
   setTwitter,
   submitTweet,
   unbindTwitter,

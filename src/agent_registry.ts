@@ -53,6 +53,7 @@ export interface AgentInfo {
 }
 
 export interface AgentTwitterInfo {
+  agentId: string;
   status: number;
   verifiedAt: number;
   username: string;
@@ -60,6 +61,7 @@ export interface AgentTwitterInfo {
 }
 
 export interface TweetVerifyInfo {
+  agentId: string;
   status: number;
   submittedAt: number;
   lastRewardedAt: number;
@@ -257,6 +259,45 @@ function parseAgentRecordData(data: Buffer | Uint8Array): AgentRecord {
     createdAt,
     updatedAt,
   };
+}
+
+/**
+ * Parse AgentTwitter from raw account data (zero-copy layout).
+ * Layout (after 8-byte discriminator):
+ *   8 agent_id_len | 32 agent_id | 8 status | 8 verified_at |
+ *   8 username_len | 8 tweet_url_len | 32 username | 256 tweet_url | ...
+ */
+function parseAgentTwitterData(data: Buffer | Uint8Array): AgentTwitterInfo {
+  const buf = Buffer.from(data);
+  let offset = 8; // skip discriminator
+  const agentIdLen = Number(buf.readBigUInt64LE(offset)); offset += 8;
+  const agentId = buf.subarray(offset, offset + agentIdLen).toString("utf-8"); offset += 32;
+  const status = Number(buf.readBigUInt64LE(offset)); offset += 8;
+  const verifiedAt = Number(buf.readBigInt64LE(offset)); offset += 8;
+  const usernameLen = Number(buf.readBigUInt64LE(offset)); offset += 8;
+  const tweetUrlLen = Number(buf.readBigUInt64LE(offset)); offset += 8;
+  const username = buf.subarray(offset, offset + usernameLen).toString("utf-8"); offset += 32;
+  const tweetUrl = buf.subarray(offset, offset + tweetUrlLen).toString("utf-8");
+  return { agentId, status, verifiedAt, username, tweetUrl };
+}
+
+/**
+ * Parse TweetVerify from raw account data (zero-copy layout).
+ * Layout (after 8-byte discriminator):
+ *   8 agent_id_len | 32 agent_id | 8 status | 8 submitted_at |
+ *   8 last_rewarded_at | 8 tweet_url_len | 256 tweet_url | ...
+ */
+function parseTweetVerifyData(data: Buffer | Uint8Array): TweetVerifyInfo {
+  const buf = Buffer.from(data);
+  let offset = 8;
+  const agentIdLen = Number(buf.readBigUInt64LE(offset)); offset += 8;
+  const agentId = buf.subarray(offset, offset + agentIdLen).toString("utf-8"); offset += 32;
+  const status = Number(buf.readBigUInt64LE(offset)); offset += 8;
+  const submittedAt = Number(buf.readBigInt64LE(offset)); offset += 8;
+  const lastRewardedAt = Number(buf.readBigInt64LE(offset)); offset += 8;
+  const tweetUrlLen = Number(buf.readBigUInt64LE(offset)); offset += 8;
+  const tweetUrl = buf.subarray(offset, offset + tweetUrlLen).toString("utf-8");
+  return { agentId, status, submittedAt, lastRewardedAt, tweetUrl };
 }
 
 /**
@@ -1153,17 +1194,7 @@ export async function getAgentTwitter(
   const twitterPda = getTwitterPda(pid, agentPda);
   const accountInfo = await connection.getAccountInfo(twitterPda);
   if (!accountInfo) return null;
-
-  const buf = Buffer.from(accountInfo.data);
-  let offset = 8; // skip discriminator
-  const status = Number(buf.readBigUInt64LE(offset)); offset += 8;
-  const verifiedAt = Number(buf.readBigInt64LE(offset)); offset += 8;
-  const usernameLen = Number(buf.readBigUInt64LE(offset)); offset += 8;
-  const tweetUrlLen = Number(buf.readBigUInt64LE(offset)); offset += 8;
-  const username = buf.subarray(offset, offset + usernameLen).toString("utf-8"); offset += 32;
-  const tweetUrl = buf.subarray(offset, offset + tweetUrlLen).toString("utf-8");
-
-  return { status, verifiedAt, username, tweetUrl };
+  return parseAgentTwitterData(accountInfo.data);
 }
 
 /**
@@ -1180,16 +1211,94 @@ export async function getTweetVerify(
   const tweetVerifyPda = getTweetVerifyPda(pid, agentPda);
   const accountInfo = await connection.getAccountInfo(tweetVerifyPda);
   if (!accountInfo) return null;
+  return parseTweetVerifyData(accountInfo.data);
+}
 
-  const buf = Buffer.from(accountInfo.data);
-  let offset = 8;
-  const status = Number(buf.readBigUInt64LE(offset)); offset += 8;
-  const submittedAt = Number(buf.readBigInt64LE(offset)); offset += 8;
-  const lastRewardedAt = Number(buf.readBigInt64LE(offset)); offset += 8;
-  const tweetUrlLen = Number(buf.readBigUInt64LE(offset)); offset += 8;
-  const tweetUrl = buf.subarray(offset, offset + tweetUrlLen).toString("utf-8");
+/** Batch getMultipleAccountsInfo in chunks of 100 (RPC limit). */
+async function batchGetMultipleAccounts(
+  connection: Connection,
+  pubkeys: PublicKey[]
+) {
+  const BATCH = 100;
+  const results: (import("@solana/web3.js").AccountInfo<Buffer> | null)[] = [];
+  for (let i = 0; i < pubkeys.length; i += BATCH) {
+    const chunk = pubkeys.slice(i, i + BATCH);
+    const batch = await connection.getMultipleAccountsInfo(chunk);
+    results.push(...batch);
+  }
+  return results;
+}
 
-  return { status, submittedAt, lastRewardedAt, tweetUrl };
+/**
+ * Parse a queue account (twitter_queue or tweet_verify_queue).
+ * Layout: [8 disc][8 len (u64)][32*N pubkeys]
+ */
+function parseQueuePubkeys(data: Buffer | Uint8Array): PublicKey[] {
+  const buf = Buffer.from(data);
+  const len = Number(buf.readBigUInt64LE(8));
+  const result: PublicKey[] = [];
+  const HEADER = 16; // 8 disc + 8 len
+  for (let i = 0; i < len; i++) {
+    const offset = HEADER + i * 32;
+    result.push(new PublicKey(buf.subarray(offset, offset + 32)));
+  }
+  return result;
+}
+
+/**
+ * Get pending twitter verification requests with full details.
+ * Reads the twitter_queue and batch-fetches AgentTwitter accounts.
+ */
+export async function getPendingTwitterVerifications(
+  connection: Connection,
+  options?: AgentRegistryOptions
+): Promise<AgentTwitterInfo[]> {
+  const pid = new PublicKey(options?.programId ?? DEFAULT_AGENT_REGISTRY_PROGRAM_ID);
+  const [queuePda] = PublicKey.findProgramAddressSync(
+    [Buffer.from("twitter_queue")],
+    pid
+  );
+  const queueInfo = await connection.getAccountInfo(queuePda);
+  if (!queueInfo) return [];
+
+  const pdas = parseQueuePubkeys(queueInfo.data);
+  if (pdas.length === 0) return [];
+
+  const accounts = await batchGetMultipleAccounts(connection, pdas);
+  const results: AgentTwitterInfo[] = [];
+  for (const acc of accounts) {
+    if (!acc) continue;
+    results.push(parseAgentTwitterData(acc.data));
+  }
+  return results;
+}
+
+/**
+ * Get pending tweet verification requests with full details.
+ * Reads the tweet_verify_queue and batch-fetches TweetVerify accounts.
+ */
+export async function getPendingTweetVerifications(
+  connection: Connection,
+  options?: AgentRegistryOptions
+): Promise<TweetVerifyInfo[]> {
+  const pid = new PublicKey(options?.programId ?? DEFAULT_AGENT_REGISTRY_PROGRAM_ID);
+  const [queuePda] = PublicKey.findProgramAddressSync(
+    [Buffer.from("tweet_verify_queue")],
+    pid
+  );
+  const queueInfo = await connection.getAccountInfo(queuePda);
+  if (!queueInfo) return [];
+
+  const pdas = parseQueuePubkeys(queueInfo.data);
+  if (pdas.length === 0) return [];
+
+  const accounts = await batchGetMultipleAccounts(connection, pdas);
+  const results: TweetVerifyInfo[] = [];
+  for (const acc of accounts) {
+    if (!acc) continue;
+    results.push(parseTweetVerifyData(acc.data));
+  }
+  return results;
 }
 
 /**

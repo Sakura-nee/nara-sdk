@@ -4442,6 +4442,19 @@ export type NaraAgentRegistry = {
         "kind": "struct",
         "fields": [
           {
+            "name": "agentIdLen",
+            "type": "u64"
+          },
+          {
+            "name": "agentId",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
             "name": "status",
             "type": "u64"
           },
@@ -4480,7 +4493,16 @@ export type NaraAgentRegistry = {
             "type": {
               "array": [
                 "u8",
-                64
+                128
+              ]
+            }
+          },
+          {
+            "name": "reserved2",
+            "type": {
+              "array": [
+                "u8",
+                128
               ]
             }
           }
@@ -4661,6 +4683,19 @@ export type NaraAgentRegistry = {
         "kind": "struct",
         "fields": [
           {
+            "name": "agentIdLen",
+            "type": "u64"
+          },
+          {
+            "name": "agentId",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
             "name": "status",
             "docs": [
               "0 = Idle, 1 = Pending"
@@ -4705,7 +4740,16 @@ export type NaraAgentRegistry = {
             "type": {
               "array": [
                 "u8",
-                64
+                128
+              ]
+            }
+          },
+          {
+            "name": "reserved2",
+            "type": {
+              "array": [
+                "u8",
+                128
               ]
             }
           }

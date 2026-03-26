@@ -4436,6 +4436,19 @@
         "kind": "struct",
         "fields": [
           {
+            "name": "agent_id_len",
+            "type": "u64"
+          },
+          {
+            "name": "agent_id",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
             "name": "status",
             "type": "u64"
           },
@@ -4474,7 +4487,16 @@
             "type": {
               "array": [
                 "u8",
-                64
+                128
+              ]
+            }
+          },
+          {
+            "name": "_reserved2",
+            "type": {
+              "array": [
+                "u8",
+                128
               ]
             }
           }
@@ -4655,6 +4677,19 @@
         "kind": "struct",
         "fields": [
           {
+            "name": "agent_id_len",
+            "type": "u64"
+          },
+          {
+            "name": "agent_id",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
             "name": "status",
             "docs": [
               "0 = Idle, 1 = Pending"
@@ -4699,7 +4734,16 @@
             "type": {
               "array": [
                 "u8",
-                64
+                128
+              ]
+            }
+          },
+          {
+            "name": "_reserved2",
+            "type": {
+              "array": [
+                "u8",
+                128
               ]
             }
           }
