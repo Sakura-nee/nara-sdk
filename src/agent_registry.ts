@@ -1370,7 +1370,8 @@ export async function verifyTwitter(
   agentId: string,
   username: string,
   options?: AgentRegistryOptions,
-  freeStakeDelta?: number
+  freeStakeDelta?: number,
+  tweetUrl?: string
 ): Promise<string> {
   const program = createProgram(connection, wallet, options?.programId);
   const agentPda = getAgentPda(program.programId, agentId);
@@ -1398,7 +1399,7 @@ export async function verifyTwitter(
   if (freeStakeDelta !== undefined && freeStakeDelta !== 0) {
     const { makeAdjustFreeStakeIx } = await import("./quest");
     const freeStakeIx = await makeAdjustFreeStakeIx(
-      connection, wallet.publicKey, authority, freeStakeDelta, `twitter_verify:${agentId}`
+      connection, wallet.publicKey, authority, freeStakeDelta, tweetUrl ?? ""
     );
     ixs.push(freeStakeIx);
   }
@@ -1433,7 +1434,8 @@ export async function approveTweet(
   wallet: Keypair,
   agentId: string,
   options?: AgentRegistryOptions,
-  freeStakeDelta?: number
+  freeStakeDelta?: number,
+  tweetUrl?: string
 ): Promise<string> {
   const program = createProgram(connection, wallet, options?.programId);
   const agentPda = getAgentPda(program.programId, agentId);
@@ -1461,7 +1463,7 @@ export async function approveTweet(
   if (freeStakeDelta !== undefined && freeStakeDelta !== 0) {
     const { makeAdjustFreeStakeIx } = await import("./quest");
     const freeStakeIx = await makeAdjustFreeStakeIx(
-      connection, wallet.publicKey, authority, freeStakeDelta, `tweet_verify:${agentId}`
+      connection, wallet.publicKey, authority, freeStakeDelta, tweetUrl ?? ""
     );
     ixs.push(freeStakeIx);
   }
