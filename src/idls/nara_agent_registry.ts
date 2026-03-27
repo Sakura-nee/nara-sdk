@@ -2821,10 +2821,6 @@ export type NaraAgentRegistry = {
           "type": "string"
         },
         {
-          "name": "username",
-          "type": "string"
-        },
-        {
           "name": "tweetUrl",
           "type": "string"
         }
@@ -4302,11 +4298,6 @@ export type NaraAgentRegistry = {
       "code": 6041,
       "name": "tweetVerifyAlreadyPending",
       "msg": "Tweet verification already pending"
-    },
-    {
-      "code": 6042,
-      "name": "twitterUsernameMismatch",
-      "msg": "Twitter username does not match verified account"
     }
   ],
   "types": [

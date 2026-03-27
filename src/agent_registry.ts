@@ -1329,13 +1329,12 @@ export async function submitTweet(
   connection: Connection,
   wallet: Keypair,
   agentId: string,
-  username: string,
   tweetUrl: string,
   options?: AgentRegistryOptions
 ): Promise<string> {
   const program = createProgram(connection, wallet, options?.programId);
   const ix = await program.methods
-    .submitTweet(agentId, username, tweetUrl)
+    .submitTweet(agentId, tweetUrl)
     .accounts({ authority: wallet.publicKey } as any)
     .instruction();
   return sendTx(connection, wallet, [ix]);

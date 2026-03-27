@@ -2815,10 +2815,6 @@
           "type": "string"
         },
         {
-          "name": "username",
-          "type": "string"
-        },
-        {
           "name": "tweet_url",
           "type": "string"
         }
@@ -4296,11 +4292,6 @@
       "code": 6041,
       "name": "TweetVerifyAlreadyPending",
       "msg": "Tweet verification already pending"
-    },
-    {
-      "code": 6042,
-      "name": "TwitterUsernameMismatch",
-      "msg": "Twitter username does not match verified account"
     }
   ],
   "types": [
