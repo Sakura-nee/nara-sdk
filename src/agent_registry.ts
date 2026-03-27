@@ -12,6 +12,7 @@ import {
 } from "@solana/web3.js";
 import * as anchor from "@coral-xyz/anchor";
 import { Program, AnchorProvider, Wallet } from "@coral-xyz/anchor";
+import BN from "bn.js";
 import { getAssociatedTokenAddressSync, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 import type { NaraAgentRegistry } from "./idls/nara_agent_registry";
 import { DEFAULT_AGENT_REGISTRY_PROGRAM_ID } from "./constants";
@@ -985,11 +986,11 @@ export async function updateAdmin(
 export async function withdrawFees(
   connection: Connection,
   wallet: Keypair,
-  amount: number | anchor.BN,
+  amount: number | BN,
   options?: AgentRegistryOptions
 ): Promise<string> {
   const program = createProgram(connection, wallet, options?.programId);
-  const amt = typeof amount === "number" ? new anchor.BN(amount) : amount;
+  const amt = typeof amount === "number" ? new BN(amount) : amount;
   const ix = await program.methods
     .withdrawFees(amt)
     .accounts({ admin: wallet.publicKey } as any)
@@ -1003,11 +1004,11 @@ export async function withdrawFees(
 export async function updateRegisterFee(
   connection: Connection,
   wallet: Keypair,
-  newFee: number | anchor.BN,
+  newFee: number | BN,
   options?: AgentRegistryOptions
 ): Promise<string> {
   const program = createProgram(connection, wallet, options?.programId);
-  const fee = typeof newFee === "number" ? new anchor.BN(newFee) : newFee;
+  const fee = typeof newFee === "number" ? new BN(newFee) : newFee;
   const ix = await program.methods
     .updateRegisterFee(fee)
     .accounts({ admin: wallet.publicKey } as any)
@@ -1022,13 +1023,13 @@ export async function updateRegisterFee(
 export async function updatePointsConfig(
   connection: Connection,
   wallet: Keypair,
-  pointsSelf: number | anchor.BN,
-  pointsReferral: number | anchor.BN,
+  pointsSelf: number | BN,
+  pointsReferral: number | BN,
   options?: AgentRegistryOptions
 ): Promise<string> {
   const program = createProgram(connection, wallet, options?.programId);
-  const ps = typeof pointsSelf === "number" ? new anchor.BN(pointsSelf) : pointsSelf;
-  const pr = typeof pointsReferral === "number" ? new anchor.BN(pointsReferral) : pointsReferral;
+  const ps = typeof pointsSelf === "number" ? new BN(pointsSelf) : pointsSelf;
+  const pr = typeof pointsReferral === "number" ? new BN(pointsReferral) : pointsReferral;
   const ix = await program.methods
     .updatePointsConfig(ps, pr)
     .accounts({ admin: wallet.publicKey } as any)
@@ -1045,15 +1046,15 @@ export async function updatePointsConfig(
 export async function updateReferralConfig(
   connection: Connection,
   wallet: Keypair,
-  referralRegisterFee: number | anchor.BN,
-  referralFeeShare: number | anchor.BN,
-  referralRegisterPoints: number | anchor.BN,
+  referralRegisterFee: number | BN,
+  referralFeeShare: number | BN,
+  referralRegisterPoints: number | BN,
   options?: AgentRegistryOptions
 ): Promise<string> {
   const program = createProgram(connection, wallet, options?.programId);
-  const fee = typeof referralRegisterFee === "number" ? new anchor.BN(referralRegisterFee) : referralRegisterFee;
-  const share = typeof referralFeeShare === "number" ? new anchor.BN(referralFeeShare) : referralFeeShare;
-  const pts = typeof referralRegisterPoints === "number" ? new anchor.BN(referralRegisterPoints) : referralRegisterPoints;
+  const fee = typeof referralRegisterFee === "number" ? new BN(referralRegisterFee) : referralRegisterFee;
+  const share = typeof referralFeeShare === "number" ? new BN(referralFeeShare) : referralFeeShare;
+  const pts = typeof referralRegisterPoints === "number" ? new BN(referralRegisterPoints) : referralRegisterPoints;
   const ix = await program.methods
     .updateReferralConfig(fee, share, pts)
     .accounts({ admin: wallet.publicKey } as any)
@@ -1069,13 +1070,13 @@ export async function updateReferralConfig(
 export async function updateActivityConfig(
   connection: Connection,
   wallet: Keypair,
-  activityReward: number | anchor.BN,
-  referralActivityReward: number | anchor.BN,
+  activityReward: number | BN,
+  referralActivityReward: number | BN,
   options?: AgentRegistryOptions
 ): Promise<string> {
   const program = createProgram(connection, wallet, options?.programId);
-  const ar = typeof activityReward === "number" ? new anchor.BN(activityReward) : activityReward;
-  const rar = typeof referralActivityReward === "number" ? new anchor.BN(referralActivityReward) : referralActivityReward;
+  const ar = typeof activityReward === "number" ? new BN(activityReward) : activityReward;
+  const rar = typeof referralActivityReward === "number" ? new BN(referralActivityReward) : referralActivityReward;
   const ix = await program.methods
     .updateActivityConfig(ar, rar)
     .accounts({ admin: wallet.publicKey } as any)
@@ -1089,11 +1090,11 @@ export async function updateActivityConfig(
 export async function expandConfig(
   connection: Connection,
   wallet: Keypair,
-  extendSize: number | anchor.BN,
+  extendSize: number | BN,
   options?: AgentRegistryOptions
 ): Promise<string> {
   const program = createProgram(connection, wallet, options?.programId);
-  const size = typeof extendSize === "number" ? new anchor.BN(extendSize) : extendSize;
+  const size = typeof extendSize === "number" ? new BN(extendSize) : extendSize;
   const ix = await program.methods
     .expandConfig(size)
     .accounts({ admin: wallet.publicKey } as any)
@@ -1127,15 +1128,15 @@ export async function updateTwitterVerifier(
 export async function updateTwitterVerificationConfig(
   connection: Connection,
   wallet: Keypair,
-  fee: number | anchor.BN,
-  reward: number | anchor.BN,
-  points: number | anchor.BN,
+  fee: number | BN,
+  reward: number | BN,
+  points: number | BN,
   options?: AgentRegistryOptions
 ): Promise<string> {
   const program = createProgram(connection, wallet, options?.programId);
-  const f = typeof fee === "number" ? new anchor.BN(fee) : fee;
-  const r = typeof reward === "number" ? new anchor.BN(reward) : reward;
-  const p = typeof points === "number" ? new anchor.BN(points) : points;
+  const f = typeof fee === "number" ? new BN(fee) : fee;
+  const r = typeof reward === "number" ? new BN(reward) : reward;
+  const p = typeof points === "number" ? new BN(points) : points;
   const ix = await program.methods
     .updateTwitterVerificationConfig(f, r, p)
     .accounts({ admin: wallet.publicKey } as any)
@@ -1151,13 +1152,13 @@ export async function updateTwitterVerificationConfig(
 export async function updateTweetVerifyConfig(
   connection: Connection,
   wallet: Keypair,
-  reward: number | anchor.BN,
-  points: number | anchor.BN,
+  reward: number | BN,
+  points: number | BN,
   options?: AgentRegistryOptions
 ): Promise<string> {
   const program = createProgram(connection, wallet, options?.programId);
-  const r = typeof reward === "number" ? new anchor.BN(reward) : reward;
-  const p = typeof points === "number" ? new anchor.BN(points) : points;
+  const r = typeof reward === "number" ? new BN(reward) : reward;
+  const p = typeof points === "number" ? new BN(points) : points;
   const ix = await program.methods
     .updateTweetVerifyConfig(r, p)
     .accounts({ admin: wallet.publicKey } as any)
@@ -1171,11 +1172,11 @@ export async function updateTweetVerifyConfig(
 export async function withdrawTwitterVerifyFees(
   connection: Connection,
   wallet: Keypair,
-  amount: number | anchor.BN,
+  amount: number | BN,
   options?: AgentRegistryOptions
 ): Promise<string> {
   const program = createProgram(connection, wallet, options?.programId);
-  const amt = typeof amount === "number" ? new anchor.BN(amount) : amount;
+  const amt = typeof amount === "number" ? new BN(amount) : amount;
   const ix = await program.methods
     .withdrawTwitterVerifyFees(amt)
     .accounts({ admin: wallet.publicKey } as any)
@@ -1367,7 +1368,7 @@ export async function submitTweet(
 ): Promise<string> {
   const program = createProgram(connection, wallet, options?.programId);
   const ix = await program.methods
-    .submitTweet(agentId, new anchor.BN(tweetId.toString()))
+    .submitTweet(agentId, new BN(tweetId.toString()))
     .accounts({ authority: wallet.publicKey } as any)
     .instruction();
   return sendTx(connection, wallet, [ix]);
@@ -1484,7 +1485,7 @@ export async function approveTweet(
   );
 
   const ix = await program.methods
-    .approveTweet(agentId, new anchor.BN(tweetId.toString()))
+    .approveTweet(agentId, new BN(tweetId.toString()))
     .accounts({
       verifier: wallet.publicKey,
       authority,
