@@ -943,11 +943,12 @@ export async function claimAirdrop(
   connection: Connection,
   wallet: Keypair,
   user: PublicKey,
+  proof: ZkProof,
   options?: QuestOptions
 ): Promise<string> {
   const program = createProgram(connection, wallet, options?.programId);
   const ix = await program.methods
-    .claimAirdrop()
+    .claimAirdrop(proof.proofA as any, proof.proofB as any, proof.proofC as any)
     .accounts({ user, payer: wallet.publicKey } as any)
     .instruction();
   return sendTx(connection, wallet, [ix]);
