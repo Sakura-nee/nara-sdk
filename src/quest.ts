@@ -853,6 +853,8 @@ export async function getQuestConfig(
   rewardPerShare: number;
   extraReward: number;
   stakeAuthority: PublicKey;
+  airdropAmount: number;
+  maxAirdropCount: number;
 }> {
   const kp = Keypair.generate();
   const program = createProgram(connection, kp, options?.programId);
@@ -875,6 +877,8 @@ export async function getQuestConfig(
     rewardPerShare: Number(config.rewardPerShare.toString()),
     extraReward: Number(config.extraReward.toString()),
     stakeAuthority: config.stakeAuthority,
+    airdropAmount: Number(config.airdropAmount.toString()),
+    maxAirdropCount: config.maxAirdropCount,
   };
 }
 
@@ -928,5 +932,44 @@ export async function adjustFreeStake(
   options?: QuestOptions
 ): Promise<string> {
   const ix = await makeAdjustFreeStakeIx(connection, wallet.publicKey, user, delta, reason, options);
+  return sendTx(connection, wallet, [ix]);
+}
+
+/**
+ * Claim airdrop for a user. The payer pays for the transaction.
+ * @param user - The user to claim airdrop for
+ */
+export async function claimAirdrop(
+  connection: Connection,
+  wallet: Keypair,
+  user: PublicKey,
+  options?: QuestOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  const ix = await program.methods
+    .claimAirdrop()
+    .accounts({ user, payer: wallet.publicKey } as any)
+    .instruction();
+  return sendTx(connection, wallet, [ix]);
+}
+
+/**
+ * Set airdrop configuration (authority only).
+ * @param airdropAmount - Amount per airdrop in lamports
+ * @param maxAirdropCount - Maximum number of airdrops per user
+ */
+export async function setAirdropConfig(
+  connection: Connection,
+  wallet: Keypair,
+  airdropAmount: number | BN,
+  maxAirdropCount: number,
+  options?: QuestOptions
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  const amt = typeof airdropAmount === "number" ? new BN(airdropAmount) : airdropAmount;
+  const ix = await program.methods
+    .setAirdropConfig(amt, maxAirdropCount)
+    .accounts({ authority: wallet.publicKey } as any)
+    .instruction();
   return sendTx(connection, wallet, [ix]);
 }

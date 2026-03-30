@@ -103,6 +103,136 @@ export type NaraQuest = {
       ]
     },
     {
+      "name": "claimAirdrop",
+      "discriminator": [
+        137,
+        50,
+        122,
+        111,
+        89,
+        254,
+        8,
+        20
+      ],
+      "accounts": [
+        {
+          "name": "gameConfig",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  113,
+                  117,
+                  101,
+                  115,
+                  116,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pool",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  113,
+                  117,
+                  101,
+                  115,
+                  116,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "winnerRecord",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  113,
+                  117,
+                  101,
+                  115,
+                  116,
+                  95,
+                  119,
+                  105,
+                  110,
+                  110,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "airdropFund",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  113,
+                  117,
+                  101,
+                  115,
+                  116,
+                  95,
+                  97,
+                  105,
+                  114,
+                  100,
+                  114,
+                  111,
+                  112
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "user",
+          "writable": true
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "createQuestion",
       "discriminator": [
         222,
@@ -348,6 +478,60 @@ export type NaraQuest = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "setAirdropConfig",
+      "discriminator": [
+        255,
+        181,
+        252,
+        34,
+        155,
+        230,
+        65,
+        227
+      ],
+      "accounts": [
+        {
+          "name": "gameConfig",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  113,
+                  117,
+                  101,
+                  115,
+                  116,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "airdropAmount",
+          "type": "u64"
+        },
+        {
+          "name": "maxAirdropCount",
+          "type": "u32"
+        }
+      ]
     },
     {
       "name": "setQuestAuthority",
@@ -1624,6 +1808,31 @@ export type NaraQuest = {
       "code": 6017,
       "name": "freeCreditsOverflow",
       "msg": "Free credits overflow"
+    },
+    {
+      "code": 6018,
+      "name": "airdropNotEligible",
+      "msg": "Not eligible: must answer current round first"
+    },
+    {
+      "code": 6019,
+      "name": "airdropMaxReached",
+      "msg": "Max airdrop count reached for this address"
+    },
+    {
+      "code": 6020,
+      "name": "airdropCooldown",
+      "msg": "Must wait 24 hours between airdrop claims"
+    },
+    {
+      "code": 6021,
+      "name": "airdropDisabled",
+      "msg": "Airdrop is disabled (amount = 0)"
+    },
+    {
+      "code": 6022,
+      "name": "insufficientAirdrop",
+      "msg": "Airdrop fund has insufficient balance"
     }
   ],
   "types": [
@@ -1713,11 +1922,19 @@ export type NaraQuest = {
             "type": "pubkey"
           },
           {
+            "name": "airdropAmount",
+            "type": "u64"
+          },
+          {
+            "name": "maxAirdropCount",
+            "type": "u32"
+          },
+          {
             "name": "padding",
             "type": {
               "array": [
                 "u8",
-                32
+                20
               ]
             }
           }
@@ -1833,11 +2050,19 @@ export type NaraQuest = {
             "type": "u64"
           },
           {
+            "name": "airdropCount",
+            "type": "u32"
+          },
+          {
+            "name": "lastAirdropTs",
+            "type": "i64"
+          },
+          {
             "name": "padding",
             "type": {
               "array": [
                 "u8",
-                64
+                52
               ]
             }
           }

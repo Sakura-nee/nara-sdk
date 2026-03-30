@@ -47,6 +47,8 @@ export {
   setStakeAuthority,
   makeAdjustFreeStakeIx,
   adjustFreeStake,
+  claimAirdrop,
+  setAirdropConfig,
   getQuestConfig,
   type QuestInfo,
   type StakeInfo,
