@@ -468,20 +468,24 @@ export async function registerAgent(
   connection: Connection,
   wallet: Keypair,
   agentId: string,
-  options?: AgentRegistryOptions
+  options?: AgentRegistryOptions,
+  payer?: Keypair
 ): Promise<{ signature: string; agentPubkey: PublicKey }> {
   if (/[A-Z]/.test(agentId)) {
     throw new Error(`Agent ID must not contain uppercase letters: "${agentId}"`);
   }
-  const program = createProgram(connection, wallet, options?.programId);
+  const payerKp = payer ?? wallet;
+  const program = createProgram(connection, payerKp, options?.programId);
 
   const ix = await program.methods
     .registerAgent(agentId)
     .accounts({
+      payer: payerKp.publicKey,
       authority: wallet.publicKey,
     } as any)
     .instruction();
-  const signature = await sendTx(connection, wallet, [ix]);
+  const signers = payer && !payer.publicKey.equals(wallet.publicKey) ? [wallet] : [];
+  const signature = await sendTx(connection, payerKp, [ix], signers);
 
   const agentPubkey = getAgentPda(program.programId, agentId);
   return { signature, agentPubkey };
@@ -496,12 +500,14 @@ export async function registerAgentWithReferral(
   wallet: Keypair,
   agentId: string,
   referralAgentId: string,
-  options?: AgentRegistryOptions
+  options?: AgentRegistryOptions,
+  payer?: Keypair
 ): Promise<{ signature: string; agentPubkey: PublicKey }> {
   if (/[A-Z]/.test(agentId)) {
     throw new Error(`Agent ID must not contain uppercase letters: "${agentId}"`);
   }
-  const program = createProgram(connection, wallet, options?.programId);
+  const payerKp = payer ?? wallet;
+  const program = createProgram(connection, payerKp, options?.programId);
   const pointMint = getPointMintPda(program.programId);
 
   const { referralAgent, referralAuthority, referralPointAccount } =
@@ -515,6 +521,7 @@ export async function registerAgentWithReferral(
   const ix = await program.methods
     .registerAgentWithReferral(agentId)
     .accounts({
+      payer: payerKp.publicKey,
       authority: wallet.publicKey,
       referralAgent,
       referralAuthority,
@@ -522,7 +529,8 @@ export async function registerAgentWithReferral(
       referralRefereeAccount,
     } as any)
     .instruction();
-  const signature = await sendTx(connection, wallet, [ix]);
+  const signers = payer && !payer.publicKey.equals(wallet.publicKey) ? [wallet] : [];
+  const signature = await sendTx(connection, payerKp, [ix], signers);
 
   const agentPubkey = getAgentPda(program.programId, agentId);
   return { signature, agentPubkey };
@@ -1357,14 +1365,17 @@ export async function setTwitter(
   agentId: string,
   username: string,
   tweetUrl: string,
-  options?: AgentRegistryOptions
+  options?: AgentRegistryOptions,
+  payer?: Keypair
 ): Promise<string> {
-  const program = createProgram(connection, wallet, options?.programId);
+  const payerKp = payer ?? wallet;
+  const program = createProgram(connection, payerKp, options?.programId);
   const ix = await program.methods
     .setTwitter(agentId, username, tweetUrl)
-    .accounts({ authority: wallet.publicKey } as any)
+    .accounts({ payer: payerKp.publicKey, authority: wallet.publicKey } as any)
     .instruction();
-  return sendTx(connection, wallet, [ix]);
+  const signers = payer && !payer.publicKey.equals(wallet.publicKey) ? [wallet] : [];
+  return sendTx(connection, payerKp, [ix], signers);
 }
 
 /**
@@ -1376,14 +1387,17 @@ export async function submitTweet(
   wallet: Keypair,
   agentId: string,
   tweetId: bigint,
-  options?: AgentRegistryOptions
+  options?: AgentRegistryOptions,
+  payer?: Keypair
 ): Promise<string> {
-  const program = createProgram(connection, wallet, options?.programId);
+  const payerKp = payer ?? wallet;
+  const program = createProgram(connection, payerKp, options?.programId);
   const ix = await program.methods
     .submitTweet(agentId, new BN(tweetId.toString()))
-    .accounts({ authority: wallet.publicKey } as any)
+    .accounts({ payer: payerKp.publicKey, authority: wallet.publicKey } as any)
     .instruction();
-  return sendTx(connection, wallet, [ix]);
+  const signers = payer && !payer.publicKey.equals(wallet.publicKey) ? [wallet] : [];
+  return sendTx(connection, payerKp, [ix], signers);
 }
 
 /**

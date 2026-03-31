@@ -1583,8 +1583,12 @@ export type NaraAgentRegistry = {
       ],
       "accounts": [
         {
-          "name": "authority",
+          "name": "payer",
           "writable": true,
+          "signer": true
+        },
+        {
+          "name": "authority",
           "signer": true
         },
         {
@@ -1675,8 +1679,12 @@ export type NaraAgentRegistry = {
       ],
       "accounts": [
         {
-          "name": "authority",
+          "name": "payer",
           "writable": true,
+          "signer": true
+        },
+        {
+          "name": "authority",
           "signer": true
         },
         {
@@ -2518,8 +2526,12 @@ export type NaraAgentRegistry = {
       ],
       "accounts": [
         {
-          "name": "authority",
+          "name": "payer",
           "writable": true,
+          "signer": true
+        },
+        {
+          "name": "authority",
           "signer": true,
           "relations": [
             "agent"
@@ -2681,8 +2693,12 @@ export type NaraAgentRegistry = {
       ],
       "accounts": [
         {
-          "name": "authority",
+          "name": "payer",
           "writable": true,
+          "signer": true
+        },
+        {
+          "name": "authority",
           "signer": true,
           "relations": [
             "agent"
