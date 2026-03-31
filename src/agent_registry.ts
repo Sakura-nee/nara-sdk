@@ -462,6 +462,101 @@ export async function getConfig(
 // ─── Agent CRUD ─────────────────────────────────────────────────
 
 /**
+ * Build a registerAgent instruction without sending it.
+ */
+export async function makeRegisterAgentIx(
+  connection: Connection,
+  payer: PublicKey,
+  authority: PublicKey,
+  agentId: string,
+  options?: AgentRegistryOptions
+): Promise<TransactionInstruction> {
+  if (/[A-Z]/.test(agentId)) {
+    throw new Error(`Agent ID must not contain uppercase letters: "${agentId}"`);
+  }
+  const program = createProgram(connection, Keypair.generate(), options?.programId);
+  return program.methods
+    .registerAgent(agentId)
+    .accounts({ payer, authority } as any)
+    .instruction();
+}
+
+/**
+ * Build a registerAgentWithReferral instruction without sending it.
+ */
+export async function makeRegisterAgentWithReferralIx(
+  connection: Connection,
+  payer: PublicKey,
+  authority: PublicKey,
+  agentId: string,
+  referralAgentId: string,
+  options?: AgentRegistryOptions
+): Promise<TransactionInstruction> {
+  if (/[A-Z]/.test(agentId)) {
+    throw new Error(`Agent ID must not contain uppercase letters: "${agentId}"`);
+  }
+  const program = createProgram(connection, Keypair.generate(), options?.programId);
+  const pointMint = getPointMintPda(program.programId);
+
+  const { referralAgent, referralAuthority, referralPointAccount } =
+    await resolveReferralAccounts(connection, referralAgentId, program.programId, pointMint);
+
+  const refereeMint = getRefereeMintPda(program.programId);
+  const referralRefereeAccount = getAssociatedTokenAddressSync(
+    refereeMint, referralAuthority, true, TOKEN_2022_PROGRAM_ID
+  );
+
+  return program.methods
+    .registerAgentWithReferral(agentId)
+    .accounts({
+      payer,
+      authority,
+      referralAgent,
+      referralAuthority,
+      referralPointAccount,
+      referralRefereeAccount,
+    } as any)
+    .instruction();
+}
+
+/**
+ * Build a setTwitter instruction without sending it.
+ */
+export async function makeSetTwitterIx(
+  connection: Connection,
+  payer: PublicKey,
+  authority: PublicKey,
+  agentId: string,
+  username: string,
+  tweetUrl: string,
+  options?: AgentRegistryOptions
+): Promise<TransactionInstruction> {
+  const program = createProgram(connection, Keypair.generate(), options?.programId);
+  return program.methods
+    .setTwitter(agentId, username, tweetUrl)
+    .accounts({ payer, authority } as any)
+    .instruction();
+}
+
+/**
+ * Build a submitTweet instruction without sending it.
+ */
+export async function makeSubmitTweetIx(
+  connection: Connection,
+  payer: PublicKey,
+  authority: PublicKey,
+  agentId: string,
+  tweetId: bigint,
+  options?: AgentRegistryOptions
+): Promise<TransactionInstruction> {
+  const program = createProgram(connection, Keypair.generate(), options?.programId);
+  return program.methods
+    .submitTweet(agentId, new BN(tweetId.toString()))
+    .accounts({ payer, authority } as any)
+    .instruction();
+}
+
+/**
  * Register a new agent on-chain (without referral). Charges the program's registration fee.
  */
 export async function registerAgent(

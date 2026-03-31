@@ -108,6 +108,10 @@ export {
 
 // Export agent registry functions and types
 export {
+  makeRegisterAgentIx,
+  makeRegisterAgentWithReferralIx,
+  makeSetTwitterIx,
+  makeSubmitTweetIx,
   registerAgent,
   registerAgentWithReferral,
   getAgentRecord,
