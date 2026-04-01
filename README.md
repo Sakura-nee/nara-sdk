@@ -16,15 +16,15 @@ TypeScript/JavaScript SDK for interacting with the Nara blockchain. Build agents
 ## Install
 
 ```bash
-npm install @nara/sdk
+npm install nara-sdk
 ```
 
 ## Quick Start
 
 ```js
-import { Connection, Keypair, Transaction } from '@nara/sdk';
+import { Connection, Keypair, Transaction } from 'nara-sdk';
 
-const connection = new Connection('https://devnet-api.nara.build');
+const connection = new Connection('https://mainnet-api.nara.build');
 const balance = await connection.getBalance(publicKey);
 ```
 
@@ -41,7 +41,7 @@ RPC Client         Full RPC method coverage
 ## CLI
 
 ```bash
-npx @nara/sdk --help
+npx nara-sdk --help
 ```
 
 ## Documentation

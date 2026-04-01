@@ -1,6 +1,6 @@
 {
   "name": "nara-sdk",
-  "version": "1.0.71",
+  "version": "1.0.72",
   "description": "SDK for the Nara chain (Solana-compatible)",
   "module": "index.ts",
   "main": "index.ts",
@@ -8,7 +8,8 @@
   "private": false,
   "files": [
     "src",
-    "index.ts"
+    "index.ts",
+    "README.md"
   ],
   "keywords": [
     "nara",
