@@ -140,6 +140,7 @@ export {
   unbindTwitter,
   verifyTwitter,
   rejectTwitter,
+  approveRejectedTwitter,
   approveTweet,
   rejectTweet,
   // Admin

@@ -1579,6 +1579,53 @@ export async function rejectTwitter(
 }
 
 /**
+ * Approve a previously rejected twitter verification (verifier-only).
+ * Awards verification reward and points to the agent owner.
+ * @param freeStakeDelta - If provided, also adjusts free stake credits for the agent owner in the same tx.
+ */
+export async function approveRejectedTwitter(
+  connection: Connection,
+  wallet: Keypair,
+  agentId: string,
+  username: string,
+  options?: AgentRegistryOptions,
+  freeStakeDelta?: number,
+  freeStakeReason?: string
+): Promise<string> {
+  const program = createProgram(connection, wallet, options?.programId);
+  const agentPda = getAgentPda(program.programId, agentId);
+
+  const accountInfo = await connection.getAccountInfo(agentPda);
+  if (!accountInfo) throw new Error(`Agent "${agentId}" not found`);
+  const authority = new PublicKey(accountInfo.data.subarray(8, 40));
+
+  const pointMint = getPointMintPda(program.programId);
+  const authorityPointAccount = getAssociatedTokenAddressSync(
+    pointMint, authority, true, TOKEN_2022_PROGRAM_ID
+  );
+
+  const ix = await program.methods
+    .approveRejectedTwitter(agentId, username)
+    .accounts({
+      verifier: wallet.publicKey,
+      authority,
+      authorityPointAccount,
+    } as any)
+    .instruction();
+
+  const ixs = [ix];
+  if (freeStakeDelta !== undefined && freeStakeDelta !== 0) {
+    const { makeAdjustFreeStakeIx } = await import("./quest");
+    const freeStakeIx = await makeAdjustFreeStakeIx(
+      connection, wallet.publicKey, authority, freeStakeDelta, freeStakeReason ?? ""
+    );
+    ixs.push(freeStakeIx);
+  }
+
+  return sendTx(connection, wallet, ixs);
+}
+
+/**
  * Approve a tweet verification (verifier-only).
  * Awards tweet verify reward and points to the agent owner.
  * @param freeStakeDelta - If provided, also adjusts free stake credits for the agent owner in the same tx.
