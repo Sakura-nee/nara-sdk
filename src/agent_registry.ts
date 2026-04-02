@@ -259,7 +259,6 @@ function parseAgentRecordData(data: Buffer | Uint8Array): AgentRecord {
     : null;
   offset += 32; // referral_id fixed array
 
-  offset += 4; // _padding
   const referralCount = buf.readUInt32LE(offset);
 
   return {

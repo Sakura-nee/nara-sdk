@@ -4862,10 +4862,6 @@
             }
           },
           {
-            "name": "_padding",
-            "type": "u32"
-          },
-          {
             "name": "referral_count",
             "type": "u32"
           },
@@ -4874,25 +4870,7 @@
             "type": {
               "array": [
                 "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "_reserved2",
-            "type": {
-              "array": [
-                "u8",
-                16
-              ]
-            }
-          },
-          {
-            "name": "_reserved3",
-            "type": {
-              "array": [
-                "u8",
-                12
+                64
               ]
             }
           }

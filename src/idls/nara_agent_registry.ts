@@ -4868,10 +4868,6 @@ export type NaraAgentRegistry = {
             }
           },
           {
-            "name": "padding",
-            "type": "u32"
-          },
-          {
             "name": "referralCount",
             "type": "u32"
           },
@@ -4880,25 +4876,7 @@ export type NaraAgentRegistry = {
             "type": {
               "array": [
                 "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "reserved2",
-            "type": {
-              "array": [
-                "u8",
-                16
-              ]
-            }
-          },
-          {
-            "name": "reserved3",
-            "type": {
-              "array": [
-                "u8",
-                12
+                64
               ]
             }
           }
