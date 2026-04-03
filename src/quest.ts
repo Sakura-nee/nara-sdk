@@ -9,7 +9,6 @@ import {
   PublicKey,
 } from "@solana/web3.js";
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
-import * as anchor from "@coral-xyz/anchor";
 import { Program, AnchorProvider, Wallet } from "@coral-xyz/anchor";
 import BN from "bn.js";
 import type { NaraQuest } from "./idls/nara_quest";
@@ -21,17 +20,32 @@ import naraQuestIdl from "./idls/nara_quest.json";
 // ─── ZK constants ────────────────────────────────────────────────
 const BN254_FIELD =
   21888242871839275222246405745257275088696311157297823662689037894645226208583n;
+let defaultZkPathsPromise: Promise<{ wasm: string; zkey: string }> | null = null;
+let snarkjsPromise: Promise<any> | null = null;
 
 // Lazily resolve default ZK circuit file paths (Node.js only).
 // In browser environments, pass circuitWasmPath/zkeyPath via QuestOptions.
 async function resolveDefaultZkPaths(): Promise<{ wasm: string; zkey: string }> {
-  const { fileURLToPath } = await import("url");
-  const { dirname, join } = await import("path");
-  const dir = dirname(fileURLToPath(import.meta.url));
-  return {
-    wasm: join(dir, "zk", "answer_proof.wasm"),
-    zkey: join(dir, "zk", "answer_proof_final.zkey"),
-  };
+  defaultZkPathsPromise ??= (async () => {
+    const { fileURLToPath } = await import("url");
+    const { dirname, join } = await import("path");
+    const dir = dirname(fileURLToPath(import.meta.url));
+    return {
+      wasm: join(dir, "zk", "answer_proof.wasm"),
+      zkey: join(dir, "zk", "answer_proof_final.zkey"),
+    };
+  })();
+
+  return defaultZkPathsPromise;
+}
+
+async function getSnarkjs(): Promise<any> {
+  snarkjsPromise ??= import("snarkjs");
+  return snarkjsPromise;
+}
+
+export async function warmupSnarkjs(): Promise<void> {
+  await getSnarkjs();
 }
 
 // ─── Types ───────────────────────────────────────────────────────
@@ -110,6 +124,27 @@ export interface ActivityLog {
   referralAgentId?: string;
 }
 
+interface QuestConfigData {
+  authority: PublicKey;
+  minRewardCount: number;
+  maxRewardCount: number;
+  stakeBpsHigh: number;
+  stakeBpsLow: number;
+  decayMs: number;
+  treasury: PublicKey;
+  questAuthority: PublicKey;
+  minQuestInterval: number;
+  rewardPerShare: number;
+  extraReward: number;
+  stakeAuthority: PublicKey;
+  airdropAmount: number;
+  maxAirdropCount: number;
+}
+
+const QUEST_CONFIG_CACHE_TTL_MS = 15_000;
+const questConfigCache = new Map<string, { data: QuestConfigData; fetchedAt: number }>();
+const questConfigInflight = new Map<string, Promise<QuestConfigData>>();
+
 // ─── ZK utilities (browser-compatible, no Buffer) ───────────────
 
 function hexFromBytes(bytes: Uint8Array): string {
@@ -185,8 +220,8 @@ function proofToHex(proof: any): ZkProofHex {
 async function silentProve(snarkjs: any, input: Record<string, string>, wasmPath: string | Uint8Array, zkeyPath: string | Uint8Array) {
   const savedLog = console.log;
   const savedError = console.error;
-  console.log = () => {};
-  console.error = () => {};
+  console.log = () => { };
+  console.error = () => { };
   try {
     return await snarkjs.groth16.fullProve(input, wasmPath, zkeyPath, null, null, { singleThread: true });
   } finally {
@@ -210,7 +245,6 @@ function createProgram(
     new Wallet(wallet),
     { commitment: "confirmed" }
   );
-  anchor.setProvider(provider);
   return new Program<NaraQuest>(idlWithPid as any, provider);
 }
 
@@ -270,6 +304,63 @@ function computeEffectiveStake(
   return stakeHigh - range * ratio * ratio;
 }
 
+function getQuestConfigCacheKey(connection: Connection, options?: QuestOptions): string {
+  return `${connection.rpcEndpoint}::${options?.programId ?? DEFAULT_QUEST_PROGRAM_ID}`;
+}
+
+async function fetchQuestConfigCached(
+  connection: Connection,
+  program: Program<NaraQuest>,
+  options?: QuestOptions
+): Promise<QuestConfigData> {
+  const cacheKey = getQuestConfigCacheKey(connection, options);
+  const now = Date.now();
+  const cached = questConfigCache.get(cacheKey);
+  if (cached && now - cached.fetchedAt < QUEST_CONFIG_CACHE_TTL_MS) {
+    return cached.data;
+  }
+
+  const inflight = questConfigInflight.get(cacheKey);
+  if (inflight) {
+    return inflight;
+  }
+
+  const request = (async () => {
+    const programId = new PublicKey(options?.programId ?? DEFAULT_QUEST_PROGRAM_ID);
+    const [configPda] = PublicKey.findProgramAddressSync(
+      [new TextEncoder().encode("quest_config")],
+      programId
+    );
+    const config = await program.account.gameConfig.fetch(configPda);
+    return {
+      authority: config.authority,
+      minRewardCount: config.minRewardCount,
+      maxRewardCount: config.maxRewardCount,
+      stakeBpsHigh: Number(config.stakeBpsHigh.toString()),
+      stakeBpsLow: Number(config.stakeBpsLow.toString()),
+      decayMs: Number(config.decayMs.toString()),
+      treasury: config.treasury,
+      questAuthority: config.questAuthority,
+      minQuestInterval: Number(config.minQuestInterval.toString()),
+      rewardPerShare: Number(config.rewardPerShare.toString()),
+      extraReward: Number(config.extraReward.toString()),
+      stakeAuthority: config.stakeAuthority,
+      airdropAmount: Number(config.airdropAmount.toString()),
+      maxAirdropCount: config.maxAirdropCount,
+    } satisfies QuestConfigData;
+  })()
+    .then((data) => {
+      questConfigCache.set(cacheKey, { data, fetchedAt: Date.now() });
+      return data;
+    })
+    .finally(() => {
+      questConfigInflight.delete(cacheKey);
+    });
+
+  questConfigInflight.set(cacheKey, request);
+  return request;
+}
+
 // ─── SDK functions ───────────────────────────────────────────────
 
 /**
@@ -295,14 +386,8 @@ export async function getQuestInfo(
   const stakeLow = Number(pool.stakeLow.toString()) / LAMPORTS_PER_SOL;
   const createdAt = pool.createdAt.toNumber();
 
-  // Fetch decayMs from GameConfig for effective calculation
-  const programId = new PublicKey(options?.programId ?? DEFAULT_QUEST_PROGRAM_ID);
-  const [configPda] = PublicKey.findProgramAddressSync(
-    [new TextEncoder().encode("quest_config")],
-    programId
-  );
-  const config = await program.account.gameConfig.fetch(configPda);
-  const decayMs = Number(config.decayMs.toString());
+  const config = await fetchQuestConfigCached(connection, program, options);
+  const decayMs = config.decayMs;
 
   // createdAt is unix timestamp (seconds), convert to ms for decay calculation
   const nowMs = Date.now();
@@ -377,7 +462,7 @@ export async function generateProof(
     zkeySource ??= defaults.zkey;
   }
 
-  const snarkjs = await import("snarkjs");
+  const snarkjs = await getSnarkjs();
   const answerHashFieldStr = hashBytesToFieldStr(answerHash);
   const { lo, hi } = pubkeyToCircuitInputs(userPubkey);
 
@@ -455,22 +540,22 @@ export async function submitAnswer(
     const { makeLogActivityIx, makeLogActivityWithReferralIx } = await import("./agent_registry");
     const logIx = activityLog.referralAgentId
       ? await makeLogActivityWithReferralIx(
-          connection,
-          wallet.publicKey,
-          activityLog.agentId,
-          activityLog.model,
-          activityLog.activity,
-          activityLog.log,
-          activityLog.referralAgentId
-        )
+        connection,
+        wallet.publicKey,
+        activityLog.agentId,
+        activityLog.model,
+        activityLog.activity,
+        activityLog.log,
+        activityLog.referralAgentId
+      )
       : await makeLogActivityIx(
-          connection,
-          wallet.publicKey,
-          activityLog.agentId,
-          activityLog.model,
-          activityLog.activity,
-          activityLog.log
-        );
+        connection,
+        wallet.publicKey,
+        activityLog.agentId,
+        activityLog.model,
+        activityLog.activity,
+        activityLog.log
+      );
     ixs.push(logIx);
   }
 
@@ -840,46 +925,10 @@ export async function setRewardPerShare(
 export async function getQuestConfig(
   connection: Connection,
   options?: QuestOptions
-): Promise<{
-  authority: PublicKey;
-  minRewardCount: number;
-  maxRewardCount: number;
-  stakeBpsHigh: number;
-  stakeBpsLow: number;
-  decayMs: number;
-  treasury: PublicKey;
-  questAuthority: PublicKey;
-  minQuestInterval: number;
-  rewardPerShare: number;
-  extraReward: number;
-  stakeAuthority: PublicKey;
-  airdropAmount: number;
-  maxAirdropCount: number;
-}> {
+): Promise<QuestConfigData> {
   const kp = Keypair.generate();
   const program = createProgram(connection, kp, options?.programId);
-  const programId = new PublicKey(options?.programId ?? DEFAULT_QUEST_PROGRAM_ID);
-  const [configPda] = PublicKey.findProgramAddressSync(
-    [new TextEncoder().encode("quest_config")],
-    programId
-  );
-  const config = await program.account.gameConfig.fetch(configPda);
-  return {
-    authority: config.authority,
-    minRewardCount: config.minRewardCount,
-    maxRewardCount: config.maxRewardCount,
-    stakeBpsHigh: Number(config.stakeBpsHigh.toString()),
-    stakeBpsLow: Number(config.stakeBpsLow.toString()),
-    decayMs: Number(config.decayMs.toString()),
-    treasury: config.treasury,
-    questAuthority: config.questAuthority,
-    minQuestInterval: Number(config.minQuestInterval.toString()),
-    rewardPerShare: Number(config.rewardPerShare.toString()),
-    extraReward: Number(config.extraReward.toString()),
-    stakeAuthority: config.stakeAuthority,
-    airdropAmount: Number(config.airdropAmount.toString()),
-    maxAirdropCount: config.maxAirdropCount,
-  };
+  return fetchQuestConfigCached(connection, program, options);
 }
 
 /**
