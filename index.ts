@@ -50,6 +50,7 @@ export {
   claimAirdrop,
   setAirdropConfig,
   getQuestConfig,
+  warmupSnarkjs,
   type QuestInfo,
   type StakeInfo,
   type ZkProof,
